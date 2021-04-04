@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "dds-ports"
+version = "0.0.0"
+description = "Scripts for create DDS repositories programmatically"
+authors = ["vector-of-bool <vectorofbool@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+typing-extensions = "^3.7.4"
+semver = "^2.13.0"
+json5 = "^0.9.5"
+aiohttp = "^3.7.4"
+
+[tool.poetry.dev-dependencies]
+pylint = "^2.7.2"
+mypy = "^0.812"
+rope = "^0.18.0"
+yapf = "^0.31.0"
+
+[tool.poetry.scripts]
+dds-ports-mkrepo = "dds_ports.main:start"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
