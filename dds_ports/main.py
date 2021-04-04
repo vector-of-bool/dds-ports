@@ -53,9 +53,9 @@ async def _import_port(port: Port, repo: RepositoryAccess) -> None:
         with temporary_directory() as sd_create_dir:
             sd_file = sd_create_dir / f'{port.package_id}.tar.gz'
             print(f'Archiving {port.package_id}...')
-            await run_process(['dds', 'pkg', 'create', f'--project={sdist_dir}', f'--out={sd_file}'])
+            await run_process(['./dds', 'pkg', 'create', f'--project={sdist_dir}', f'--out={sd_file}'])
             print(f'Storing {port.package_id}')
-            await run_process(['dds', 'repoman', 'import', str(repo.directory), str(sd_file)])
+            await run_process(['./dds', 'repoman', 'import', str(repo.directory), str(sd_file)])
 
 
 async def _main(args: CommandArguments) -> int:

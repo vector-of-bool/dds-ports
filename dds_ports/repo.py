@@ -28,5 +28,5 @@ class RepositoryAccess:
 
     @staticmethod
     async def open(dirpath: Path) -> 'RepositoryAccess':
-        lines = subprocess.check_output(['dds', 'repoman', 'ls', str(dirpath)]).strip().splitlines()
+        lines = subprocess.check_output(['./dds', 'repoman', 'ls', str(dirpath)]).strip().splitlines()
         return RepositoryAccess(dirpath, (PackageID.parse(l.decode()) for l in lines))

@@ -49,7 +49,7 @@ class SimpleGitHubAdaptingPort(NamedTuple):
                 async with BUILD_SEMAPHORE:
                     print(f'Attempting a build of {self.package_id}...')
                     await util.run_process(
-                        ['dds', 'build', '--no-tests', f'--project={clone}', f'--out={clone/"_build"}'])
+                        ['./dds', 'build', '--no-tests', f'--project={clone}', f'--out={clone/"_build"}'])
             yield clone
 
 
