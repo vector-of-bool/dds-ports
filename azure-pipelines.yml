@@ -19,6 +19,8 @@ steps:
     displayName: Run Static Checks
   - script: make prepare-repo
     displayName: Build Repository
+    env:
+      GITHUB_API_TOKEN: $(GITHUB_API_TOKEN)
   - task: CopyFilesOverSSH@0
     displayName: Deploy Repository
     condition: and(succeeded(), eq(variables.shouldDeploy, 'true'))
