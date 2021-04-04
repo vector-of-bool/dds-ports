@@ -4,29 +4,32 @@ variables:
   shouldDeploy: >-
     ${{ eq(variables['Build.SourceBranch'], 'refs/heads/master') }}
 
-pool:
-  vmImage: ubuntu-20.04
-steps:
-  - script: sudo apt-get -y install wget
-    displayName: Install wget
-  - script: make wget-repo-db
-    displayName: Download Current Repository Database
-  - script: python3 -m pip install poetry
-    displayName: Install Poetry
-  - script: poetry install
-    displayName: Poetry Install Project
-  - script: make precheck -j3
-    displayName: Run Static Checks
-  - script: make prepare-repo
-    displayName: Build Repository
-    env:
-      GITHUB_API_TOKEN: $(GITHUB_API_TOKEN)
-  - task: CopyFilesOverSSH@0
-    displayName: Deploy Repository
-    condition: and(succeeded(), eq(variables.shouldDeploy, 'true'))
-    inputs:
-      sshEndpoint: dds.pizza
-      sourceFolder: _ports-repo/
-      targetFolder: www/repo-1-ci/
-      failOnEmptySource: true
-      overwrite: true
+jobs:
+  - job: main_job
+    displayName: Prepare and Deploy Repository
+    pool:
+      vmImage: ubuntu-20.04
+    steps:
+      - script: sudo apt-get -y install wget
+        displayName: Install wget
+      - script: make wget-repo-db
+        displayName: Download Current Repository Database
+      - script: python3 -m pip install poetry
+        displayName: Install Poetry
+      - script: poetry install
+        displayName: Poetry Install Project
+      - script: make precheck -j3
+        displayName: Run Static Checks
+      - script: make prepare-repo
+        displayName: Build Repository
+        env:
+          GITHUB_API_TOKEN: $(GITHUB_API_TOKEN)
+      - task: CopyFilesOverSSH@0
+        displayName: Deploy Repository
+        condition: and(succeeded(), eq(variables.shouldDeploy, 'true'))
+        inputs:
+          sshEndpoint: dds.pizza
+          sourceFolder: _ports-repo/
+          targetFolder: www/repo-1-ci/
+          failOnEmptySource: true
+          overwrite: true

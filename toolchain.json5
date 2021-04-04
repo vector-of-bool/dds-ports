@@ -1,0 +1,8 @@
+{
+    compiler_id: 'gnu',
+    cxx_version: 'c++20',
+    c_compiler: 'gcc-10',
+    cxx_compiler: 'g++-10',
+    link_flags: ['-fuse-ld=lld', '-lstdc++fs', '-fsanitize=address,undefined'],
+    debug: true,
+}
