@@ -1,0 +1,41 @@
+# Refer: https://aka.ms/yaml
+
+variables:
+  shouldDeploy: >-
+    ${{ eq(variables['Build.SourceBranch'], 'refs/heads/master') }}
+
+stages:
+  - stage: build_ports
+    displayName: Build Ports
+    jobs:
+      - job: download_current
+        displayName: Download Current Repository
+        pool:
+          vmImage: ubuntu-20.04
+        steps:
+          - script: sudo apt-get -y install wget
+            displayName: Install wget
+          - script: make wget-repo-db
+            displayName: Download Repository Database
+      - job: do_repo
+        displayName: Build & Deploy Repository
+        pool:
+          vmImage: ubuntu-20.04
+        steps:
+          - script: python3 -m pip install poetry
+            displayName: Install Poetry
+          - script: poetry install
+            displayName: Poetry Install Project
+          - script: make precheck -j3
+            displayName: Run Static Checks
+          - script: make prepare-repo
+            displayName: Build Repository
+          - task: CopyFilesOverSSH@0
+            displayName: Deploy Repository
+            condition: and(succeeded(), eq(variables.shouldDeploy, 'true'))
+            inputs:
+              sshEndpoint: dds.pizza
+              sourceFolder: _ports-repo/
+              targetFolder: www/repo-1-ci/
+              failOnEmptySource: true
+              overwrite: true
