@@ -184,4 +184,11 @@ async def all_ports() -> Iterable[port.Port]:
             min_version=VersionInfo(1, 4, 0),
             fs_transform=fixup_spdlog,
         ),
+        auto.enumerate_simple_github(
+            owner='soasis',
+            repo='text',
+            package_name='ztd.text',
+            namespace='ztd',
+            library_name='text',
+        ),
     )))
