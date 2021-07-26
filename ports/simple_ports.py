@@ -29,7 +29,7 @@ async def fixup_spdlog(root: Path) -> None:
 
 
 async def fixup_fmt_8(root: Path) -> None:
-    # XXX: Delete fmt.cc, which was added in fmt@8 and is a C++ module unit, which
+    # Delete fmt.cc, which was added in fmt@8 and is a C++ module unit, which
     # dds cannot yet handle
     await fs.remove_files([Path(root / 'src/fmt.cc')])
 
