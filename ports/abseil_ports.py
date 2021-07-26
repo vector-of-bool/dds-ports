@@ -17,6 +17,7 @@ async def fixup_abseil(root: Path) -> None:
         '*_test.c*',
         '*_testing.c*',
         '*_benchmark.c*',
+        '*_benchmarks.c*',
         'benchmarks.c*',
         '*_test_common.c*',
         'mocking_*.c*',
