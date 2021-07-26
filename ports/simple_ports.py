@@ -28,6 +28,12 @@ async def fixup_spdlog(root: Path) -> None:
     tweakme_h.write_text('\n'.join(tweakme_h_lines))
 
 
+async def fixup_fmt_8(root: Path) -> None:
+    # XXX: Delete fmt.cc, which was added in fmt@8 and is a C++ module unit, which
+    # dds cannot yet handle
+    await fs.remove_files([Path(root / 'src/fmt.cc')])
+
+
 async def all_ports() -> Iterable[port.Port]:
     return itertools.chain.from_iterable(await util.wait_all((
         auto.enumerate_simple_github(
@@ -64,6 +70,7 @@ async def all_ports() -> Iterable[port.Port]:
             repo='fmt',
             namespace='fmt',
             min_version=VersionInfo(6),
+            fs_transform=fixup_fmt_8,
         ),
         auto.enumerate_simple_github(
             owner='Neargye',
