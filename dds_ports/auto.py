@@ -26,10 +26,9 @@ FSTransformFn = Callable[[Path], Awaitable[None]]
 BUILD_SEMAPHORE = Semaphore(1)
 
 
-class SimpleGitHubAdaptingPort(NamedTuple):
+class SimpleGitAdaptingPort(NamedTuple):
     package_id: PackageID
-    owner: str
-    repo: str
+    url: str
     tag: str
     package_json: PackageJSON
     library_json: LibraryJSON
@@ -38,12 +37,14 @@ class SimpleGitHubAdaptingPort(NamedTuple):
 
     @asynccontextmanager
     async def prepare_sdist(self) -> AsyncIterator[Path]:
-        gh_port = git.SimpleGitPort(self.package_id, f'https://github.com/{self.owner}/{self.repo}.git', self.tag)
-        async with gh_port.prepare_sdist() as clone:
+        git_port = git.SimpleGitPort(self.package_id, self.url, self.tag)
+        async with git_port.prepare_sdist() as clone:
             full_pkg_json: Any = self.package_json
             full_pkg_json['version'] = str(self.package_id.version)
-            clone.joinpath('package.json').write_text(json.dumps(full_pkg_json, indent=2))
-            clone.joinpath('library.json').write_text(json.dumps(self.library_json, indent=2))
+            clone.joinpath('package.json').write_text(
+                json.dumps(full_pkg_json, indent=2))
+            clone.joinpath('library.json').write_text(
+                json.dumps(self.library_json, indent=2))
             await self.fs_transform(clone)
             if self.try_build:
                 async with BUILD_SEMAPHORE:
@@ -51,6 +52,13 @@ class SimpleGitHubAdaptingPort(NamedTuple):
                     await util.run_process(
                         ['./dds', 'build', '--no-tests', f'--project={clone}', f'--out={clone/"_build"}'])
             yield clone
+
+
+class SimpleGitHubAdaptingPort(SimpleGitAdaptingPort):
+    def __init__(self, *, owner: str, repo: str, **kwargs):
+        self.owner = owner
+        self.repo = repo
+        super().__init__(**kwargs, url=f'https://github.com/{self.owner}/{self.repo}.git')
 
 
 async def get_repo_ports(owner: str, repo: str, *, min_version: VersionInfo, package_json: PackageJSON,
