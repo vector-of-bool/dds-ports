@@ -39,8 +39,8 @@ def check_sdist(pid: PackageID, dirpath: Path) -> None:
     if manver != pid.version:
         raise RuntimeError(f'Package manifest for {pid} declares a different version [{manver}]')
 
-    if not dirpath.joinpath('src').is_dir() and not dirpath.joinpath('include').is_dir():
-        raise RuntimeError(f'Package {pid} does not contain either a src/ or include/ directory')
+    if all(not dirpath.joinpath(sub).is_dir() for sub in ('include', 'src', 'libs')):
+        raise RuntimeError(f'Package {pid} does not contain either a src/, include/, or libs/ directory')
     print(f'Package {pid} is OK')
 
 
