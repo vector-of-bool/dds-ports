@@ -3,8 +3,6 @@ Git utilities
 """
 
 from asyncio import Semaphore
-import asyncio
-from asyncio.futures import Future
 import subprocess
 from typing import AsyncIterator
 from pathlib import Path

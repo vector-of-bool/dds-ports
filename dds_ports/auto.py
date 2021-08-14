@@ -60,7 +60,7 @@ class SimpleGitHubAdaptingPort(SimpleGitAdaptingPort):
     owner: str
     repo: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.url = f'https://github.com/{self.owner}/{self.repo}.git'
 
 
