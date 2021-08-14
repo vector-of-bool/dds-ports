@@ -2,8 +2,9 @@ from asyncio import Semaphore
 from contextlib import asynccontextmanager
 from pathlib import Path
 import json
-from typing import Callable, Iterable, Sequence, Optional, NamedTuple, AsyncIterator, Any, Awaitable
+from typing import Callable, Iterable, Sequence, Optional, AsyncIterator, Any, Awaitable
 from typing_extensions import TypedDict
+from dataclasses import dataclass, field
 
 from semver import VersionInfo
 
@@ -26,22 +27,15 @@ FSTransformFn = Callable[[Path], Awaitable[None]]
 BUILD_SEMAPHORE = Semaphore(1)
 
 
+@dataclass
 class SimpleGitAdaptingPort:
-    def __init__(self,
-                 package_id: PackageID,
-                 url: str,
-                 tag: str,
-                 package_json: PackageJSON,
-                 library_json: LibraryJSON,
-                 fs_transform: FSTransformFn,
-                 try_build: bool):
-        self.package_id = package_id
-        self.url = url
-        self.tag = tag
-        self.package_json = package_json
-        self.library_json = library_json
-        self.fs_transform = fs_transform
-        self.try_build = try_build
+    package_id: PackageID
+    url: str
+    tag: str
+    package_json: PackageJSON
+    library_json: LibraryJSON
+    fs_transform: FSTransformFn
+    try_build: bool
 
     @asynccontextmanager
     async def prepare_sdist(self) -> AsyncIterator[Path]:
@@ -49,10 +43,8 @@ class SimpleGitAdaptingPort:
         async with git_port.prepare_sdist() as clone:
             full_pkg_json: Any = self.package_json
             full_pkg_json['version'] = str(self.package_id.version)
-            clone.joinpath('package.json').write_text(
-                json.dumps(full_pkg_json, indent=2))
-            clone.joinpath('library.json').write_text(
-                json.dumps(self.library_json, indent=2))
+            clone.joinpath('package.json').write_text(json.dumps(full_pkg_json, indent=2))
+            clone.joinpath('library.json').write_text(json.dumps(self.library_json, indent=2))
             await self.fs_transform(clone)
             if self.try_build:
                 async with BUILD_SEMAPHORE:
@@ -62,12 +54,14 @@ class SimpleGitAdaptingPort:
             yield clone
 
 
+@dataclass
 class SimpleGitHubAdaptingPort(SimpleGitAdaptingPort):
-    def __init__(self, *, owner: str, repo: str, **kwargs):
-        self.owner = owner
-        self.repo = repo
-        super().__init__(
-            **kwargs, url=f'https://github.com/{self.owner}/{self.repo}.git')
+    url: str = field(init=False)  # Computed from `owner` and `repo`
+    owner: str
+    repo: str
+
+    def __post_init__(self):
+        self.url = f'https://github.com/{self.owner}/{self.repo}.git'
 
 
 async def get_repo_ports(owner: str, repo: str, *, min_version: VersionInfo, package_json: PackageJSON,

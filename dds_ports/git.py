@@ -23,8 +23,7 @@ async def temporary_git_clone(url: str, tag_or_branch: str) -> AsyncIterator[Pat
             print(f'Cloning repository {url} at {tag_or_branch} into {tdir}')
 
             try:
-                await run_process(
-                    ['git', 'clone', '--quiet', f'--branch={tag_or_branch}', '--depth=1', url, str(tdir)])
+                await run_process(['git', 'clone', '--quiet', f'--branch={tag_or_branch}', '--depth=1', url, str(tdir)])
             except subprocess.CalledProcessError:
                 await run_process(['git', 'clone', '--quiet', url, str(tdir)])
                 await run_process(['git', '-C', str(tdir), 'checkout', tag_or_branch])
