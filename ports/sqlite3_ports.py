@@ -123,8 +123,13 @@ class SQLite3Port:
                     'name': 'sqlite3',
                     'namespace': 'sqlite3',
                     'version': str(self.version),
-                }))
-            tmpdir.joinpath('library.json').write_text(json.dumps({'name': 'sqlite3'}))
+                }),
+                encoding='utf-8',
+            )
+            tmpdir.joinpath('library.json').write_text(
+                json.dumps({'name': 'sqlite3'}),
+                encoding='utf-8',
+            )
             yield tmpdir
 
 
