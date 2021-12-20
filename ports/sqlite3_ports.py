@@ -96,13 +96,13 @@ async def prep_sqlite3_dir(destdir: Path, url: str) -> None:
                         break
                     ofd.write(buf)
 
-        zf = zipfile.ZipFile(zip_dest)
-        destdir.joinpath('src/sqlite3').mkdir(exist_ok=True, parents=True)
-        for fname in ('sqlite3.h', 'sqlite3.c', 'sqlite3ext.h'):
-            with zf.open(f'{topdir}/{fname}') as sf:
-                content = sf.read()
-                content = SRC_PREFIX.encode() + content
-                destdir.joinpath('src/sqlite3', fname).write_bytes(content)
+        with zipfile.ZipFile(zip_dest) as zf:
+            destdir.joinpath('src/sqlite3').mkdir(exist_ok=True, parents=True)
+            for fname in ('sqlite3.h', 'sqlite3.c', 'sqlite3ext.h'):
+                with zf.open(f'{topdir}/{fname}') as sf:
+                    content = sf.read()
+                    content = SRC_PREFIX.encode() + content
+                    destdir.joinpath('src/sqlite3', fname).write_bytes(content)
 
 
 class SQLite3Port:
