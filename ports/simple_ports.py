@@ -28,6 +28,10 @@ async def fixup_spdlog(root: Path) -> None:
     tweakme_h.write_text('\n'.join(tweakme_h_lines))
 
 
+async def fixup_taskflow(root: Path) -> None:
+    await fs.move_files(files=root.glob('taskflow/**/*'), into=root / 'src/', whence=root)
+
+
 async def all_ports() -> Iterable[port.Port]:
     return itertools.chain.from_iterable(await util.wait_all((
         auto.enumerate_simple_github(
@@ -183,5 +187,13 @@ async def all_ports() -> Iterable[port.Port]:
             uses=['fmt/fmt'],
             min_version=VersionInfo(1, 4, 0),
             fs_transform=fixup_spdlog,
+        ),
+        auto.enumerate_simple_github(
+            owner='taskflow',
+            repo='taskflow',
+            namespace='taskflow',
+            depends=[],
+            uses=[],
+            fs_transform=fixup_taskflow,
         ),
     )))
