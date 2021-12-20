@@ -5,8 +5,8 @@ from typing import Any, AsyncContextManager, Iterable, Optional
 from aiohttp import client
 from semver import VersionInfo
 
+from .legacy import LegacyDDSGitPort
 from .port import Port, PackageID
-from .git import SimpleGitPort
 from .util import tag_as_version, drop_nones
 
 HTTP_SESSION = client.ClientSession()
@@ -42,14 +42,14 @@ async def repo_tags_as_versions(owner: str, repo: str) -> Iterable[VersionInfo]:
     return drop_nones(tag_as_version(t) for t in tags)
 
 
-def _tags_as_ports(tags: Iterable[str], owner: str, repo: str, pkg_name: Optional[str],
-                   min_version: VersionInfo) -> Iterable[Port]:
+def _tags_as_legacy_ports(tags: Iterable[str], owner: str, repo: str, pkg_name: Optional[str],
+                          min_version: VersionInfo) -> Iterable[Port]:
     for t in tags:
         ver = tag_as_version(t)
         if ver is None or ver < min_version:
             continue
-        pid = PackageID(name=pkg_name or repo, version=ver)
-        yield SimpleGitPort(pid, f'https://github.com/{owner}/{repo}.git', t)
+        pid = PackageID(name=pkg_name or repo, version=ver, meta_version=1)
+        yield LegacyDDSGitPort(pid, f'https://github.com/{owner}/{repo}.git', t)
 
 
 async def native_dds_ports_for_github_repo(*,
@@ -59,4 +59,4 @@ async def native_dds_ports_for_github_repo(*,
                                            min_version: VersionInfo = VersionInfo(0)) -> Iterable[Port]:
     tags = await get_repo_tags(owner, repo)
     print(f'Generating ports for {owner}/{repo}')
-    return _tags_as_ports(tags, owner, repo, pkg_name, min_version)
+    return _tags_as_legacy_ports(tags, owner, repo, pkg_name, min_version)

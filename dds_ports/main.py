@@ -14,6 +14,8 @@ from .github import session_context_manager
 from .util import wait_all, temporary_directory, run_process
 from .repo import RepositoryAccess
 
+REPO_SEMAPHORE = asyncio.Semaphore(1)
+
 
 class CommandArguments(Protocol):
     ports_dir: Path
@@ -49,13 +51,9 @@ async def _import_port(port: Port, repo: RepositoryAccess) -> None:
         print('Skipping import of already-imported package:', port.package_id)
         return
     async with port.prepare_sdist() as sdist_dir:
-        check_sdist(port.package_id, sdist_dir)
-        with temporary_directory() as sd_create_dir:
-            sd_file = sd_create_dir / f'{port.package_id}.tar.gz'
-            print(f'Archiving {port.package_id}...')
-            await run_process(['./dds', 'pkg', 'create', f'--project={sdist_dir}', f'--out={sd_file}'])
+        async with REPO_SEMAPHORE:
             print(f'Storing {port.package_id}')
-            await run_process(['./dds', 'repoman', 'import', str(repo.directory), str(sd_file)])
+            await run_process(['dds', 'repo', 'import', str(repo.directory), str(sdist_dir)])
 
 
 async def _main(args: CommandArguments) -> int:
@@ -78,3 +76,7 @@ def main(argv: Sequence[str]) -> int:
 
 def start() -> NoReturn:
     sys.exit(main(sys.argv[1:]))
+
+
+if __name__ == '__main__':
+    start()

@@ -1,13 +1,12 @@
 import itertools
 from contextlib import asynccontextmanager
-import json
 from pathlib import Path, PurePosixPath
 from semver import VersionInfo
 import zipfile
 from typing import NamedTuple, AsyncIterator, Sequence
 import aiohttp.client
 
-from dds_ports import port, util
+from dds_ports import port, util, crs
 
 
 class SQLite3VersionGroup(NamedTuple):
@@ -82,9 +81,9 @@ SRC_PREFIX = r'''
 '''
 
 
-async def prep_sqlite3_dir(destdir: Path, url: str) -> None:
+async def prep_sqlite3_dir(destdir: Path, url: str, version: VersionInfo) -> None:
     topdir = PurePosixPath(url).with_suffix('').name
-    with util.temporary_directory() as tmpdir:
+    with util.temporary_directory(f'sqlite3-{version}') as tmpdir:
         zip_dest = tmpdir / 'archive.zip'
         async with aiohttp.client.ClientSession() as sess:
             resp = await sess.get(url)
@@ -109,22 +108,31 @@ class SQLite3Port:
     def __init__(self, year: int, version: VersionInfo) -> None:
         self.year = year
         self.version = version
-        self.package_id = port.PackageID('sqlite3', version)
+        self.package_id = port.PackageID('sqlite3', version, 1)
 
     @asynccontextmanager
     async def prepare_sdist(self) -> AsyncIterator[Path]:
         ver = self.version
         url = f'https://sqlite.org/{self.year}/sqlite-amalgamation-{ver.major}{ver.minor:0>2}{ver.patch:0>2}00.zip'
 
-        with util.temporary_directory() as tmpdir:
-            await prep_sqlite3_dir(tmpdir, url)
-            tmpdir.joinpath('package.json').write_text(
-                json.dumps({
+        with util.temporary_directory(str(self.package_id)) as tmpdir:
+            await prep_sqlite3_dir(tmpdir, url, ver)
+            crs.write_crs_file(
+                tmpdir,
+                {
                     'name': 'sqlite3',
                     'namespace': 'sqlite3',
                     'version': str(self.version),
-                }))
-            tmpdir.joinpath('library.json').write_text(json.dumps({'name': 'sqlite3'}))
+                    'meta_version': 1,
+                    'libraries': [{
+                        'name': 'sqlite3',
+                        'path': '.',
+                        'uses': [],
+                        'depends': [],
+                    }],
+                    'crs_version': 1,
+                },
+            )
             yield tmpdir
 
 

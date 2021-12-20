@@ -2,7 +2,7 @@ import itertools
 from pathlib import Path
 from semver import VersionInfo
 
-from dds_ports import auto, port, fs
+from dds_ports import auto, port, fs, crs
 
 
 async def fixup_zlib(root: Path) -> None:
@@ -35,21 +35,14 @@ async def all_ports() -> port.PortIter:
     )
 
     tags_vers = ((tag, VersionInfo.parse(s)) for tag, s in tags_ver_strs)
+    meta_version = 1
 
     return (auto.SimpleGitHubAdaptingPort(
-        package_id=port.PackageID('zlib', version),
+        package_id=port.PackageID('zlib', version, meta_version),
         owner='madler',
         repo='zlib',
         tag=tag,
-        package_json={
-            'name': 'zlib',
-            'namespace': 'zlib',
-            'depends': [],
-        },
-        library_json={
-            'name': 'zlib',
-            'uses': [],
-        },
+        crs_json=crs.simple_placeholder_json('zlib'),
         fs_transform=fixup_zlib,
         try_build=True,
     ) for tag, version in tags_vers)

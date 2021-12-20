@@ -36,11 +36,11 @@ def drop_nones(it: Iterable[Optional[T]]) -> Iterable[T]:
 
 
 @contextmanager
-def temporary_directory() -> Iterator[Path]:
+def temporary_directory(suffix: str = 'dds-ports') -> Iterator[Path]:
     """
     Obtain a temporary directory that will be automatically deleted
     """
-    tdir = Path(tempfile.mkdtemp(suffix='-dds-ports'))
+    tdir = Path(tempfile.mkdtemp(suffix='-' + suffix))
     try:
         tdir.mkdir(exist_ok=True, parents=True)
         yield tdir
@@ -51,7 +51,7 @@ def temporary_directory() -> Iterator[Path]:
 async def run_process(command: Sequence[str]) -> None:
     proc = await asyncio.create_subprocess_exec(*command,
                                                 stdin=asyncio.subprocess.PIPE,
-                                                stdout=None,
+                                                stdout=asyncio.subprocess.PIPE,
                                                 stderr=asyncio.subprocess.STDOUT)
     output, _ = await proc.communicate()
     retc = await proc.wait()

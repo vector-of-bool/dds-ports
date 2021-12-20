@@ -38,18 +38,22 @@ async def all_ports() -> port.PortIter:
     ]
 
     return (auto.SimpleGitHubAdaptingPort(
-        package_id=port.PackageID('abseil', VersionInfo.parse(version_str)),
+        package_id=port.PackageID('abseil', VersionInfo.parse(version_str), 1),
         owner='abseil',
         repo='abseil-cpp',
         tag=tag,
-        package_json={
-            'name': 'abseil',
+        crs_json={
+            'name': '[placeholder]',
+            'version': '[placeholder]',
+            'meta_version': -1,
             'namespace': 'abseil',
-            'depends': [],
-        },
-        library_json={
-            'name': 'abseil',
-            'uses': [],
+            'libraries': [{
+                'name': 'abseil',
+                'path': '.',
+                'uses': [],
+                'depends': [],
+            }],
+            'crs_version': 1,
         },
         fs_transform=fixup_abseil,
         try_build=False,

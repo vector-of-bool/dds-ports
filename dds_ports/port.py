@@ -8,14 +8,16 @@ from semver import VersionInfo
 class PackageID(NamedTuple):
     name: str
     version: VersionInfo
+    meta_version: int
 
     def __str__(self) -> str:
-        return f'{self.name}@{self.version}'
+        return f'{self.name}@{self.version}~{self.meta_version}'
 
     @staticmethod
     def parse(s: str) -> 'PackageID':
-        name, verstr = s.split('@')
-        return PackageID(name, VersionInfo.parse(verstr))
+        name, verstr_1 = s.split('@')
+        verstr, meta_ver = verstr_1.split('~')
+        return PackageID(name, VersionInfo.parse(verstr), int(meta_ver))
 
 
 class Port(Protocol):

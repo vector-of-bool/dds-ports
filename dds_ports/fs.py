@@ -19,7 +19,6 @@ async def remove_directory(dirpath: Path) -> None:
 
 def _remove_files(files: Iterable[Path]) -> None:
     for f in files:
-        print(f'Remove [{f}]')
         f.unlink()
 
 
@@ -40,7 +39,6 @@ def _move_files(*, into: Path, files: Iterable[Path], whence: Path) -> None:
             dest_path.mkdir(exist_ok=True, parents=True)
         else:
             dest_path.parent.mkdir(exist_ok=True, parents=True)
-            print(f'Move [{src_path}] \n  to [{dest_path}]')
             src_path.rename(dest_path)
 
 
