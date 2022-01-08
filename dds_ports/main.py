@@ -50,7 +50,7 @@ async def _import_port(port: Port, repo: RepositoryAccess) -> None:
     if port.package_id in repo.packages:
         print('Skipping import of already-imported package:', port.package_id)
         return
-    async with port.prepare_sdist() as sdist_dir:
+    async with port.prepare_sdist(repo.directory) as sdist_dir:
         async with REPO_SEMAPHORE:
             print(f'Storing {port.package_id}')
             await run_process(['dds', 'repo', 'import', str(repo.directory), str(sdist_dir)])

@@ -15,7 +15,7 @@ CLONE_SEMAPHORE = Semaphore(4)
 
 @asynccontextmanager
 async def temporary_git_clone(url: str, tag_or_branch: str) -> AsyncIterator[Path]:
-    with temporary_directory() as tdir:
+    with temporary_directory(tag_or_branch) as tdir:
         async with CLONE_SEMAPHORE:
             print(f'Cloning repository {url} at {tag_or_branch} into {tdir}')
             await run_process(['git', 'clone', '--quiet', f'--branch={tag_or_branch}', '--depth=1', url, str(tdir)])
@@ -34,7 +34,7 @@ class SimpleGitPort:
         return self._pid
 
     @asynccontextmanager
-    async def prepare_sdist(self) -> AsyncIterator[Path]:
+    async def prepare_sdist(self, repo_dir: Path) -> AsyncIterator[Path]:
         async with temporary_git_clone(self._url, self._tag) as clone:
             yield clone
 

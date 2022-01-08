@@ -27,8 +27,8 @@ class LegacyDDSGitPort(SimpleGitPort):
         super().__init__(pkg_id, url, tag)
 
     @asynccontextmanager
-    async def prepare_sdist(self) -> AsyncIterator[Path]:
-        async with super().prepare_sdist() as clone:
+    async def prepare_sdist(self, repo_dir: Path) -> AsyncIterator[Path]:
+        async with super().prepare_sdist(repo_dir) as clone:
             self._fixup_crs(clone)
             yield clone
 
@@ -49,8 +49,6 @@ class LegacyDDSGitPort(SimpleGitPort):
         for libdir, lib in read_library_jsons(dirpath):
             relpath = libdir.relative_to(dirpath)
             lib_deps = deepcopy(deps)
-            for d in lib_deps:
-                d['uses'] = [u for u in lib.get('uses', []) if _filter_dep_usage(d, u)]
             crs_lib: crs.CRS_Library = {
                 'name': lib['name'],
                 'path': str(relpath),
@@ -59,12 +57,28 @@ class LegacyDDSGitPort(SimpleGitPort):
             }
             yield crs_lib
 
+    def _fixup_dep_str(self, dep: str) -> crs.CRS_Dependency:
+        s: str = dep
+        if dep.startswith('neo-fun'):
+            s = f'{dep} uses fun for lib'
+        if dep.startswith('neo-concepts'):
+            s = f'{dep} uses concepts for lib'
+        if dep.startswith('neo-buffer'):
+            s = f'{dep} uses buffer for lib'
+        if dep.startswith('neo-io'):
+            s = f'{dep} uses io for lib'
+        if dep.startswith('zlib'):
+            s = f'{dep} uses zlib for lib'
+        if dep.startswith('sqlite3'):
+            s = f'{dep} uses sqlite3 for lib'
+        return crs.convert_dep_str(s)
+
     def _fixup_dependencies(self, deps: Union[Sequence[str], dict[str, str]]) -> list[crs.CRS_Dependency]:
         print(f'Fixup deps for {self.package_id}')
         if isinstance(deps, Sequence):
-            return list(crs.convert_dep_str(dep) for dep in deps)
+            return list(self._fixup_dep_str(dep) for dep in deps)
         else:
-            return list(crs.convert_dep_str(key + mark) for key, mark in deps.items())
+            return list(self._fixup_dep_str(key + mark) for key, mark in deps.items())
 
     def __repr__(self) -> str:
         return f'<LegacyDDSGitPort package={self.package_id} url=[{self._url}]>'

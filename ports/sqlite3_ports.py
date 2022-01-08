@@ -111,7 +111,7 @@ class SQLite3Port:
         self.package_id = port.PackageID('sqlite3', version, 1)
 
     @asynccontextmanager
-    async def prepare_sdist(self) -> AsyncIterator[Path]:
+    async def prepare_sdist(self, repo_dir: Path) -> AsyncIterator[Path]:
         ver = self.version
         url = f'https://sqlite.org/{self.year}/sqlite-amalgamation-{ver.major}{ver.minor:0>2}{ver.patch:0>2}00.zip'
 

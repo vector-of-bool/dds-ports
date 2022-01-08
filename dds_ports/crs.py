@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Iterable
+from typing import Optional, cast
 from typing_extensions import Literal, TypedDict
 from pathlib import Path
 import json
@@ -39,13 +39,16 @@ CRS_JSON = TypedDict(
         'crs_version': Literal[1],
     })
 
-_DEP_SPLIT_RE = re.compile(r'^(.+?)([@^~+])(.+)$')
+_DEP_SPLIT_RE = re.compile(r'^(.+?)([@^~+])(.+) uses ((?:[\w\.-]+)(?:, [\w\.-]+)*) for (lib|test|app)$')
 
 
-def convert_dep_str(dep: str, *, uses: Iterable[str] = ()) -> CRS_Dependency:
+def convert_dep_str(dep: str) -> CRS_Dependency:
     mat = _DEP_SPLIT_RE.match(dep)
-    assert mat, dep
-    name, tag, version_str = mat.groups()
+    assert mat, (
+        dep,
+        'Invalid dependency shorthand string. Should be "<name>[@^~+]<version> uses [<lib>[, ...]] for {lib|test|app}')
+    name, tag, version_str, uses_, use_for = mat.groups()
+    uses = uses_.split(', ')
     version = semver.VersionInfo.parse(version_str)
     hi_version = semver.VersionInfo(0)
     if tag == '@':
@@ -60,7 +63,7 @@ def convert_dep_str(dep: str, *, uses: Iterable[str] = ()) -> CRS_Dependency:
         assert 0, (dep, tag)
     return {
         'name': str(name),
-        'for': 'lib',
+        'for': cast(Literal['lib', 'app', 'test'], use_for),
         'versions': [{
             'low': str(version),
             'high': str(hi_version),

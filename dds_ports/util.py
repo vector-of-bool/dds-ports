@@ -11,7 +11,7 @@ from semver import VersionInfo
 
 T = TypeVar('T')
 
-TAG_VERSION_RE = re.compile(r'(?:v|boost-)?(\d+\.\d+(\.\d+)?(-.*|$))')
+TAG_VERSION_RE = re.compile(r'(?:v|boost-|yaml-cpp-|release-)?(\d+\.\d+(\.\d+)?(-.*|$))')
 
 
 async def wait_all(futs: Iterable[Awaitable[T]]) -> Iterable[T]:
@@ -27,7 +27,7 @@ def tag_as_version(tag: str) -> Optional[VersionInfo]:
     try:
         return VersionInfo.parse(ver_str)
     except ValueError:
-        print(f'Failed to parse version-like tag "{tag}"')
+        print(f'Failed to parse version-like tag "{tag}" ({ver_str})')
         return None
 
 

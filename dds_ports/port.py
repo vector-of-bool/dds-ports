@@ -25,7 +25,7 @@ class Port(Protocol):
     def package_id(self) -> PackageID:
         ...
 
-    def prepare_sdist(self) -> AsyncContextManager[Path]:
+    def prepare_sdist(self, repo_dir: Path) -> AsyncContextManager[Path]:
         ...
 
 

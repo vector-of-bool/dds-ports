@@ -68,28 +68,33 @@ class SimpleGitHubAdaptingPort(NamedTuple):
     try_build: bool
 
     @asynccontextmanager
-    async def prepare_sdist(self) -> AsyncIterator[Path]:
+    async def prepare_sdist(self, repo_dir: Path) -> AsyncIterator[Path]:
         gh_port = git.SimpleGitPort(self.package_id, f'https://github.com/{self.owner}/{self.repo}.git', self.tag)
-        async with gh_port.prepare_sdist() as clone:
+        async with gh_port.prepare_sdist(repo_dir) as clone:
             full_crs_json = deepcopy(self.crs_json)
             full_crs_json['name'] = self.package_id.name
             full_crs_json['version'] = str(self.package_id.version)
             full_crs_json['meta_version'] = self.package_id.meta_version
             crs.write_crs_file(clone, full_crs_json)
             await self.fs_transform(clone)
-            if 0 and self.try_build:
+            if self.try_build:
                 async with BUILD_SEMAPHORE:
                     print(f'Attempting a build of {self.package_id}...')
-                    await util.run_process(
-                        ['./dds', 'build', '--no-tests', f'--project={clone}', f'--out={clone/"_build"}'])
+                    await util.run_process([
+                        'dds',
+                        'build',
+                        '--no-tests',
+                        f'--project={clone}',
+                        f'--use-repo={repo_dir.resolve()}',
+                        f'--out={clone/"_build"}',
+                    ])
             yield clone
 
 
 async def get_repo_ports(owner: str, repo: str, *, min_version: VersionInfo, max_version: VersionInfo,
                          crs_json: crs.CRS_JSON, fs_transform: FSTransformFn, try_build: bool) -> Iterable[Port]:
-    tags = await github.get_repo_tags(owner, repo)
-    print(f'Importing tags for {owner}/{repo}')
-    tagged_versions = ((tag, util.tag_as_version(tag)) for tag in tags)
+    tags = list(await github.get_repo_tags(owner, repo))
+    tagged_versions = list((tag, util.tag_as_version(tag)) for tag in tags)
     return (  #
         SimpleGitHubAdaptingPort(
             package_id=PackageID(crs_json['name'], version, meta_version=1),
@@ -119,7 +124,6 @@ async def enumerate_simple_github(
     package_name: Optional[str] = None,
     library_name: Optional[str] = None,
     depends: Optional[Sequence[str]] = None,
-    uses: Optional[Sequence[str]] = None,
     fs_transform: Optional[FSTransformFn] = None,
     meta_version: int = 1,
     try_build: bool = True,
@@ -144,7 +148,7 @@ async def enumerate_simple_github(
                 'path': '.',
                 'name': library_name or repo,
                 'uses': [],
-                'depends': [crs.convert_dep_str(d, uses=(uses or [])) for d in (depends or [])],
+                'depends': [crs.convert_dep_str(d) for d in (depends or [])],
             }],
         },
         fs_transform=fs_transform or _null_transform,
