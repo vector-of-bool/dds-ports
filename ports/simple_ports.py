@@ -196,4 +196,10 @@ async def all_ports() -> Iterable[port.Port]:
             uses=[],
             fs_transform=fixup_taskflow,
         ),
+        auto.enumerate_simple_github(
+            owner='jbeder',
+            repo='yaml-cpp',
+            namespace='yaml-cpp',
+            min_version=VersionInfo(0, 6, 0),
+        ),
     )))
