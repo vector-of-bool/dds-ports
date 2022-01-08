@@ -11,7 +11,7 @@ from semver import VersionInfo
 
 T = TypeVar('T')
 
-TAG_VERSION_RE = re.compile(r'(?:v|boost-)?(\d+\.\d+(\.\d+)?(-.*|$))')
+TAG_VERSION_RE = re.compile(r'(?:v|boost-|yaml-cpp-|release-)?(\d+\.\d+(\.\d+)?(-.*|$))')
 
 
 async def wait_all(futs: Iterable[Awaitable[T]]) -> Iterable[T]:
