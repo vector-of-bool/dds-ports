@@ -56,5 +56,9 @@ async def run_process(command: Sequence[str]) -> None:
     output, _ = await proc.communicate()
     retc = await proc.wait()
     if retc != 0:
-        print(f'Subprocess {command} failed:\n{output.decode()}')
+        if output is not None:
+            print(f'Subprocess {command} failed:\n{output.decode()}')
+        else:
+            print(f'Subprocess {command} failed.')
+
         raise subprocess.CalledProcessError(retc, command, output=output)

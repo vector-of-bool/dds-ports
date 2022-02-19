@@ -23,6 +23,7 @@ async def all_ports(dirpath: Path) -> Iterable[Port]:
 
 async def ports_in_file(fpath: Path) -> Iterable[Port]:
     spec = importlib.util.spec_from_file_location(f'<portfile at {fpath}>', fpath)
+    assert spec
     module = importlib.util.module_from_spec(spec)
     assert spec.loader
     spec.loader.exec_module(module)  # type: ignore
