@@ -5,11 +5,9 @@ from typing import Iterable, Sequence, NoReturn, cast
 from typing_extensions import Protocol
 import sys
 
-import json5
-from semver import VersionInfo
 from dagon import task, proc
 
-from .port import Port, PackageID
+from .port import Port
 from .collect import collect_ports
 from .github import session_context_manager
 from .repo import RepositoryAccess

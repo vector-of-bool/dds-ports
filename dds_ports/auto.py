@@ -5,7 +5,7 @@ import itertools
 from asyncio import Semaphore
 from pathlib import Path
 from typing import Callable, Iterable, Sequence, Optional, NamedTuple, Awaitable, cast
-from typing_extensions import TypedDict, TypeGuard
+from typing_extensions import TypedDict
 import json5
 
 import dagon.ui
