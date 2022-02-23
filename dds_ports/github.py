@@ -5,7 +5,6 @@ from typing import Any, AsyncContextManager, Iterable, Optional
 from aiohttp import client
 from semver import VersionInfo
 
-from .legacy import LegacyDDSGitPort
 from .port import Port, PackageID
 from .util import tag_as_version, drop_nones
 
@@ -44,11 +43,12 @@ async def repo_tags_as_versions(owner: str, repo: str) -> Iterable[VersionInfo]:
 
 def _tags_as_legacy_ports(tags: Iterable[str], owner: str, repo: str, pkg_name: Optional[str],
                           min_version: VersionInfo) -> Iterable[Port]:
+    from .legacy import LegacyDDSGitPort  # pylint: disable=cyclic-import
     for t in tags:
         ver = tag_as_version(t)
         if ver is None or ver < min_version:
             continue
-        pid = PackageID(name=pkg_name or repo, version=ver, meta_version=1)
+        pid = PackageID(name=pkg_name or repo, version=ver, revision=1)
         yield LegacyDDSGitPort(pid, f'https://github.com/{owner}/{repo}.git', t)
 
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, cast
+from typing import cast
 from typing_extensions import Literal, TypedDict
 from pathlib import Path
 import json
@@ -8,7 +8,7 @@ import re
 
 import semver
 
-CRS_LibraryUses = TypedDict('CRS_LibraryUses', {
+CRS_LibraryUsing = TypedDict('CRS_LibraryUsing', {
     'lib': str,
     'for': Literal['lib', 'app', 'test'],
 })
@@ -20,35 +20,33 @@ CRS_Dependency = TypedDict('CRS_Dependency', {
     'name': str,
     'for': Literal['lib', 'app', 'test'],
     'versions': 'list[CRS_DepVersionRange]',
-    'uses': 'list[str]',
+    'using': 'list[str]',
 })
 CRS_Library = TypedDict('CRS_Library', {
     'path': str,
     'name': str,
-    'depends': 'list[CRS_Dependency]',
-    'uses': 'list[CRS_LibraryUses]',
+    'dependencies': 'list[CRS_Dependency]',
+    'using': 'list[CRS_LibraryUsing]',
 })
 
-CRS_JSON = TypedDict(
-    'CRS_JSON', {
-        'name': str,
-        'version': str,
-        'meta_version': int,
-        'namespace': str,
-        'libraries': 'list[CRS_Library]',
-        'crs_version': Literal[1],
-    })
+CRS_JSON = TypedDict('CRS_JSON', {
+    'name': str,
+    'version': str,
+    'pkg-version': int,
+    'libraries': 'list[CRS_Library]',
+    'schema-version': Literal[1],
+})
 
-_DEP_SPLIT_RE = re.compile(r'^(.+?)([@^~+])(.+) uses ((?:[\w\.-]+)(?:, [\w\.-]+)*) for (lib|test|app)$')
+_DEP_SPLIT_RE = re.compile(r'^(.+?)([@^~+])(.+) using ((?:[\w\.-]+)(?:, [\w\.-]+)*) for (lib|test|app)$')
 
 
 def convert_dep_str(dep: str) -> CRS_Dependency:
     mat = _DEP_SPLIT_RE.match(dep)
     assert mat, (
         dep,
-        'Invalid dependency shorthand string. Should be "<name>[@^~+]<version> uses [<lib>[, ...]] for {lib|test|app}')
-    name, tag, version_str, uses_, use_for = mat.groups()
-    uses = uses_.split(', ')
+        'Invalid dependency shorthand string. Should be "<name>[@^~+]<version> using [<lib>[, ...]] for {lib|test|app}')
+    name, tag, version_str, using_, use_for = mat.groups()
+    using = using_.split(', ')
     version = semver.VersionInfo.parse(version_str)
     hi_version = semver.VersionInfo(0)
     if tag == '@':
@@ -68,7 +66,7 @@ def convert_dep_str(dep: str) -> CRS_Dependency:
             'low': str(version),
             'high': str(hi_version),
         }],
-        'uses': list(uses),
+        'using': list(using),
     }
 
 
@@ -78,18 +76,16 @@ def write_crs_file(dirpath: Path, content: CRS_JSON) -> Path:
     return dest
 
 
-def simple_placeholder_json(library: str, *, namespace: Optional[str] = None) -> CRS_JSON:
-    namespace = namespace or library
+def simple_placeholder_json(library: str) -> CRS_JSON:
     return {
         'name': '[placeholder]',
         'version': '[placeholder]',
-        'meta_version': -1,
-        'namespace': namespace,
+        'pkg-version': -1,
         'libraries': [{
             'name': library,
             'path': '.',
-            'uses': [],
-            'depends': [],
+            'using': [],
+            'dependencies': [],
         }],
-        'crs_version': 1,
+        'schema-version': 1,
     }

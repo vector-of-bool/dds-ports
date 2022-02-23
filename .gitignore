@@ -5,3 +5,4 @@ __pycache__/
 .vscode/
 _build/
 _git/
+.dagon.db

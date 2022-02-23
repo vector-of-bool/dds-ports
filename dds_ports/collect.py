@@ -15,7 +15,7 @@ def find_port_files(dirpath: Path) -> Iterable[Path]:
     return matching
 
 
-async def all_ports(dirpath: Path) -> Iterable[Port]:
+async def collect_ports(dirpath: Path) -> Iterable[Port]:
     loading = (ports_in_file(fpath) for fpath in find_port_files(dirpath))
     ports = await wait_all(loading)
     return itertools.chain.from_iterable(ports)
@@ -23,7 +23,8 @@ async def all_ports(dirpath: Path) -> Iterable[Port]:
 
 async def ports_in_file(fpath: Path) -> Iterable[Port]:
     spec = importlib.util.spec_from_file_location(f'<portfile at {fpath}>', fpath)
+    assert spec
     module = importlib.util.module_from_spec(spec)
     assert spec.loader
-    spec.loader.exec_module(module)  # type: ignore
+    spec.loader.exec_module(module)
     return await module.all_ports()  # type: ignore

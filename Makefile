@@ -5,8 +5,13 @@
 
 default: prepare-repo
 
+init-repo:
+	./dds repo init _ports-repo --name repo-2.dds.pizza --if-exists=ignore
+
 wget-repo-db:
-	wget https://repo-1.dds.pizza/repo.db -P _ports-repo
+	mkdir -p _ports-repo
+	wget https://repo-2.dds.pizza/repo.db -O _ports-repo/repo.db || \
+		$(MAKE) init-repo
 
 precheck: pylint mypy format-check
 

@@ -61,7 +61,6 @@ async def all_ports() -> port.PortIter:
     return await auto.enumerate_simple_github(
         owner='lsalzman',
         repo='enet',
-        namespace='enet',
         package_name='enet',
         library_name='enet',
         fs_transform=fixup_enet,

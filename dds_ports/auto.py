@@ -3,13 +3,17 @@ from __future__ import annotations
 from copy import deepcopy
 import itertools
 from asyncio import Semaphore
-from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Callable, Iterable, Sequence, Optional, NamedTuple, AsyncIterator, Awaitable, cast
-from typing_extensions import TypedDict
+from typing import Callable, Iterable, Sequence, Optional, NamedTuple, Awaitable, cast
+from typing_extensions import TypedDict, TypeGuard
 import json5
 
-from semver import VersionInfo, max_ver
+import dagon.ui
+import dagon.fs
+import dagon.proc
+import dagon.pool
+from dagon import task
+from semver import VersionInfo
 
 from dds_ports.port import Port, PackageID
 from dds_ports import git, github, util, crs
@@ -67,28 +71,33 @@ class SimpleGitHubAdaptingPort(NamedTuple):
     fs_transform: FSTransformFn
     try_build: bool
 
-    @asynccontextmanager
-    async def prepare_sdist(self, repo_dir: Path) -> AsyncIterator[Path]:
-        gh_port = git.SimpleGitPort(self.package_id, f'https://github.com/{self.owner}/{self.repo}.git', self.tag)
-        async with gh_port.prepare_sdist(repo_dir) as clone:
-            full_crs_json = deepcopy(self.crs_json)
-            full_crs_json['name'] = self.package_id.name
-            full_crs_json['version'] = str(self.package_id.version)
-            full_crs_json['meta_version'] = self.package_id.meta_version
-            crs.write_crs_file(clone, full_crs_json)
-            await self.fs_transform(clone)
-            if self.try_build:
-                async with BUILD_SEMAPHORE:
-                    print(f'Attempting a build of {self.package_id}...')
-                    await util.run_process([
-                        'dds',
-                        'build',
-                        '--no-tests',
-                        f'--project={clone}',
-                        f'--use-repo={repo_dir.resolve()}',
-                        f'--out={clone/"_build"}',
-                    ])
-            yield clone
+    async def _prep_crs(self, cloner: task.Task[Path]) -> Path:
+        clone: Path = await task.result_of(cloner)
+        dagon.ui.status(f'Generating sdist for {self.package_id}')
+        full_crs_json = deepcopy(self.crs_json)
+        full_crs_json['name'] = self.package_id.name
+        full_crs_json['version'] = str(self.package_id.version)
+        full_crs_json['pkg-version'] = self.package_id.revision
+        crs.write_crs_file(clone, full_crs_json)
+        await self.fs_transform(clone)
+        return clone
+
+    def make_prep_task(self) -> task.Task[Path]:
+        simple = git.SimpleGitPort(
+            f'gh/{self.owner}/{self.repo}',
+            self.package_id,
+            f'https://github.com/{self.owner}/{self.repo}.git',
+            self.tag,
+        ).make_prep_task()
+        return task.fn_task(f'{self.package_id}@fixup', lambda: self._prep_crs(simple), depends=[simple])
+
+
+def _version_in_range(ver: VersionInfo, min_: VersionInfo, max_: VersionInfo) -> bool:
+    if ver < min_:
+        return False
+    if ver >= max_:
+        return False
+    return True
 
 
 async def get_repo_ports(owner: str, repo: str, *, min_version: VersionInfo, max_version: VersionInfo,
@@ -97,7 +106,7 @@ async def get_repo_ports(owner: str, repo: str, *, min_version: VersionInfo, max
     tagged_versions = list((tag, util.tag_as_version(tag)) for tag in tags)
     return (  #
         SimpleGitHubAdaptingPort(
-            package_id=PackageID(crs_json['name'], version, meta_version=1),
+            package_id=PackageID(crs_json['name'], version, revision=1),
             owner=owner,
             repo=repo,
             tag=tag,
@@ -106,7 +115,7 @@ async def get_repo_ports(owner: str, repo: str, *, min_version: VersionInfo, max
             try_build=try_build,
         )  #
         for tag, version in tagged_versions  #
-        if version is not None and version >= min_version and version < max_version  #
+        if version is not None and _version_in_range(version, min_version, max_version)  #
     )
 
 
@@ -118,14 +127,13 @@ async def enumerate_simple_github(
     *,
     owner: str,
     repo: str,
-    namespace: str,
     min_version: VersionInfo = VersionInfo(0),
     max_version: VersionInfo = VersionInfo(99999999),
     package_name: Optional[str] = None,
     library_name: Optional[str] = None,
     depends: Optional[Sequence[str]] = None,
     fs_transform: Optional[FSTransformFn] = None,
-    meta_version: int = 1,
+    pkg_version: int = 1,
     try_build: bool = True,
 ) -> Iterable[Port]:
     return await get_repo_ports(
@@ -136,19 +144,17 @@ async def enumerate_simple_github(
         crs_json={
             'name':
             package_name or repo,
-            'meta_version':
-            meta_version,
+            'pkg-version':
+            pkg_version,
             'version':
             '[placeholder]',
-            'namespace':
-            namespace,
-            'crs_version':
+            'schema-version':
             1,
             'libraries': [{
                 'path': '.',
                 'name': library_name or repo,
-                'uses': [],
-                'depends': [crs.convert_dep_str(d) for d in (depends or [])],
+                'using': [],
+                'dependencies': [crs.convert_dep_str(d) for d in (depends or [])],
             }],
         },
         fs_transform=fs_transform or _null_transform,

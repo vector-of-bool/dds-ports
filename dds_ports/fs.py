@@ -59,7 +59,6 @@ def _copy_files(*, into: Path, files: Iterable[Path], whence: Path) -> None:
             dest_path.mkdir(exist_ok=True, parents=True)
         else:
             dest_path.parent.mkdir(exist_ok=True, parents=True)
-            print(f'Copy [{src_path}] \n  to [{dest_path}]')
             shutil.copy2(src_path, dest_path)
 
 

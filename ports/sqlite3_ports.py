@@ -1,10 +1,13 @@
 import itertools
-from contextlib import asynccontextmanager
 from pathlib import Path, PurePosixPath
+import tempfile
 from semver import VersionInfo
 import zipfile
-from typing import NamedTuple, AsyncIterator, Sequence
+from typing import NamedTuple, Sequence
 import aiohttp.client
+
+from dagon import task
+import dagon.ui
 
 from dds_ports import port, util, crs
 
@@ -85,6 +88,7 @@ async def prep_sqlite3_dir(destdir: Path, url: str, version: VersionInfo) -> Non
     topdir = PurePosixPath(url).with_suffix('').name
     with util.temporary_directory(f'sqlite3-{version}') as tmpdir:
         zip_dest = tmpdir / 'archive.zip'
+        dagon.ui.status(f'Downloading SQLite3 archive for {version}')
         async with aiohttp.client.ClientSession() as sess:
             resp = await sess.get(url)
             resp.raise_for_status()
@@ -95,13 +99,13 @@ async def prep_sqlite3_dir(destdir: Path, url: str, version: VersionInfo) -> Non
                         break
                     ofd.write(buf)
 
-        zf = zipfile.ZipFile(zip_dest)
-        destdir.joinpath('src/sqlite3').mkdir(exist_ok=True, parents=True)
-        for fname in ('sqlite3.h', 'sqlite3.c', 'sqlite3ext.h'):
-            with zf.open(f'{topdir}/{fname}') as sf:
-                content = sf.read()
-                content = SRC_PREFIX.encode() + content
-                destdir.joinpath('src/sqlite3', fname).write_bytes(content)
+        with zipfile.ZipFile(zip_dest) as zf:
+            destdir.joinpath('src/sqlite3').mkdir(exist_ok=True, parents=True)
+            for fname in ('sqlite3.h', 'sqlite3.c', 'sqlite3ext.h'):
+                with zf.open(f'{topdir}/{fname}') as sf:
+                    content = sf.read()
+                    content = SRC_PREFIX.encode() + content
+                    destdir.joinpath('src/sqlite3', fname).write_bytes(content)
 
 
 class SQLite3Port:
@@ -110,30 +114,31 @@ class SQLite3Port:
         self.version = version
         self.package_id = port.PackageID('sqlite3', version, 1)
 
-    @asynccontextmanager
-    async def prepare_sdist(self, repo_dir: Path) -> AsyncIterator[Path]:
+    async def _prep_sd(self) -> Path:
         ver = self.version
         url = f'https://sqlite.org/{self.year}/sqlite-amalgamation-{ver.major}{ver.minor:0>2}{ver.patch:0>2}00.zip'
+        tmpdir = Path(tempfile.mkdtemp(suffix=f'-dds-ports-sqlite3-{ver}'))
 
-        with util.temporary_directory(str(self.package_id)) as tmpdir:
-            await prep_sqlite3_dir(tmpdir, url, ver)
-            crs.write_crs_file(
-                tmpdir,
-                {
+        await prep_sqlite3_dir(tmpdir, url, ver)
+        crs.write_crs_file(
+            tmpdir,
+            {
+                'name': 'sqlite3',
+                'version': str(self.version),
+                'pkg-version': 1,
+                'libraries': [{
                     'name': 'sqlite3',
-                    'namespace': 'sqlite3',
-                    'version': str(self.version),
-                    'meta_version': 1,
-                    'libraries': [{
-                        'name': 'sqlite3',
-                        'path': '.',
-                        'uses': [],
-                        'depends': [],
-                    }],
-                    'crs_version': 1,
-                },
-            )
-            yield tmpdir
+                    'path': '.',
+                    'using': [],
+                    'dependencies': [],
+                }],
+                'schema-version': 1,
+            },
+        )
+        return tmpdir
+
+    def make_prep_task(self) -> task.Task[Path]:
+        return task.fn_task(str(self.package_id), self._prep_sd)
 
 
 async def all_ports() -> port.PortIter:

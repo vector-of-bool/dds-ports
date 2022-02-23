@@ -1,17 +1,19 @@
-from typing import Iterable, NamedTuple, AsyncContextManager
+from typing import Iterable, NamedTuple
 from typing_extensions import Protocol
 from pathlib import Path
 
 from semver import VersionInfo
 
+from dagon import task
+
 
 class PackageID(NamedTuple):
     name: str
     version: VersionInfo
-    meta_version: int
+    revision: int
 
     def __str__(self) -> str:
-        return f'{self.name}@{self.version}~{self.meta_version}'
+        return f'{self.name}@{self.version}~{self.revision}'
 
     @staticmethod
     def parse(s: str) -> 'PackageID':
@@ -25,7 +27,7 @@ class Port(Protocol):
     def package_id(self) -> PackageID:
         ...
 
-    def prepare_sdist(self, repo_dir: Path) -> AsyncContextManager[Path]:
+    def make_prep_task(self) -> task.Task[Path]:
         ...
 
 
