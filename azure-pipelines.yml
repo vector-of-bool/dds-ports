@@ -30,6 +30,6 @@ jobs:
         inputs:
           sshEndpoint: dds.pizza
           sourceFolder: _ports-repo/
-          targetFolder: www/repo-1-ci/
+          targetFolder: www/repo-2-ci/
           failOnEmptySource: true
           overwrite: true
