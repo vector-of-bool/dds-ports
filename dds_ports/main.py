@@ -2,23 +2,24 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-from pathlib import Path
-from typing import Iterable, Sequence, NoReturn, cast
-from typing_extensions import Protocol
 import sys
+from pathlib import Path
+from typing import Iterable, NoReturn, Sequence, cast
 
-from dagon import task, proc
+import dagon.ext.exec
+import dagon.ext.loader
+import dagon.pool
+import dagon.tool.main
+import dagon.ui
+from dagon import proc, task
+from dagon.task import TaskDAG
+from dagon.task.dag import populate_dag_context
+from typing_extensions import Protocol
 
-from .port import Port
 from .collect import collect_ports
 from .github import session_context_manager
+from .port import Port
 from .repo import RepositoryAccess
-from dagon.task import TaskDAG
-import dagon.pool
-from dagon.task.dag import populate_dag_context
-import dagon.tool.main
-import dagon.ext.loader
-import dagon.ext.exec
 
 
 class CommandArguments(Protocol):
@@ -33,7 +34,10 @@ async def _init_all_ports(dirpath: Path) -> Iterable[Port]:
 
 async def _import_from(repo: RepositoryAccess, pkgs: Iterable[task.Task[Path]]) -> None:
     dirs = [await task.result_of(t) for t in pkgs]
+    dagon.ui.status('Importing packages...')
     await proc.run(['./dds', 'repo', 'import', str(repo.directory), *dirs, '--if-exists=replace'], on_output='status')
+    dagon.ui.status('Validating repository...')
+    await proc.run(['./dds', 'repo', 'validate', str(repo.directory)], on_output='status')
 
 
 def main(argv: Sequence[str]) -> int:
