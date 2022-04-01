@@ -18,16 +18,18 @@ CRS_DepVersionRange = TypedDict('CRS_DepVersionRange', {
 })
 CRS_Dependency = TypedDict('CRS_Dependency', {
     'name': str,
-    'for': Literal['lib', 'app', 'test'],
     'versions': 'list[CRS_DepVersionRange]',
     'using': 'list[str]',
 })
-CRS_Library = TypedDict('CRS_Library', {
-    'path': str,
-    'name': str,
-    'dependencies': 'list[CRS_Dependency]',
-    'using': 'list[CRS_LibraryUsing]',
-})
+CRS_Library = TypedDict(
+    'CRS_Library', {
+        'path': str,
+        'name': str,
+        'dependencies': 'list[CRS_Dependency]',
+        'test-dependencies': 'list[CRS_Dependency]',
+        'using': 'list[CRS_LibraryUsing]',
+        'test-using': 'list[CRS_LibraryUsing]',
+    })
 
 CRS_JSON = TypedDict('CRS_JSON', {
     'name': str,
@@ -37,15 +39,13 @@ CRS_JSON = TypedDict('CRS_JSON', {
     'schema-version': Literal[1],
 })
 
-_DEP_SPLIT_RE = re.compile(r'^(.+?)([@^~+])(.+) using ((?:[\w\.-]+)(?:, [\w\.-]+)*) for (lib|test|app)$')
+_DEP_SPLIT_RE = re.compile(r'^(.+?)([@^~+])(.+) using ((?:[\w\.-]+)(?:, [\w\.-]+)*)$')
 
 
 def convert_dep_str(dep: str) -> CRS_Dependency:
     mat = _DEP_SPLIT_RE.match(dep)
-    assert mat, (
-        dep,
-        'Invalid dependency shorthand string. Should be "<name>[@^~+]<version> using [<lib>[, ...]] for {lib|test|app}')
-    name, tag, version_str, using_, use_for = mat.groups()
+    assert mat, (dep, 'Invalid dependency shorthand string. Should be "<name>[@^~+]<version> using [<lib>[, ...]]')
+    name, tag, version_str, using_ = mat.groups()
     using = using_.split(', ')
     version = semver.VersionInfo.parse(version_str)
     hi_version = semver.VersionInfo(0)
@@ -61,7 +61,6 @@ def convert_dep_str(dep: str) -> CRS_Dependency:
         assert 0, (dep, tag)
     return {
         'name': str(name),
-        'for': cast(Literal['lib', 'app', 'test'], use_for),
         'versions': [{
             'low': str(version),
             'high': str(hi_version),
@@ -78,14 +77,20 @@ def write_crs_file(dirpath: Path, content: CRS_JSON) -> Path:
 
 def simple_placeholder_json(library: str) -> CRS_JSON:
     return {
-        'name': '[placeholder]',
-        'version': '[placeholder]',
-        'pkg-version': -1,
+        'name':
+        '[placeholder]',
+        'version':
+        '[placeholder]',
+        'pkg-version':
+        -1,
         'libraries': [{
             'name': library,
             'path': '.',
             'using': [],
+            'test-using': [],
             'dependencies': [],
+            'test-dependencies': [],
         }],
-        'schema-version': 1,
+        'schema-version':
+        1,
     }

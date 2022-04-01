@@ -43,16 +43,22 @@ async def all_ports() -> port.PortIter:
         repo='abseil-cpp',
         tag=tag,
         crs_json={
-            'name': '[placeholder]',
-            'version': '[placeholder]',
-            'pkg-version': -1,
+            'name':
+            '[placeholder]',
+            'version':
+            '[placeholder]',
+            'pkg-version':
+            -1,
             'libraries': [{
                 'name': 'abseil',
                 'path': '.',
                 'using': [],
+                'test-using': [],
                 'dependencies': [],
+                'test-dependencies': [],
             }],
-            'schema-version': 1,
+            'schema-version':
+            1,
         },
         fs_transform=fixup_abseil,
         try_build=False,

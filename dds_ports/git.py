@@ -29,6 +29,7 @@ async def temporary_git_clone(url: str, tag_or_branch: str) -> AsyncIterator[Pat
 
 
 class SimpleGitPort:
+
     def __init__(self, clone_key: str, pkg_id: PackageID, url: str, tag: str) -> None:
         self._clone_key = clone_key
         self._pid = pkg_id
@@ -45,7 +46,7 @@ class SimpleGitPort:
         sub_clone: Path = full_clone.with_name(full_clone.name + f'@{self._tag}')
         await dagon.fs.remove(sub_clone, recurse=True, absent_ok=True)
         dagon.ui.status(f'Generating sdist for {self.package_id}')
-        await dagon.proc.run(['git', 'clone', f'--branch={self._tag}', '--depth=1', full_clone, sub_clone])
+        await dagon.proc.run(['git', 'clone', f'--branch={self._tag}', '--depth=1', full_clone.as_uri(), sub_clone])
         return sub_clone
 
     def make_prep_task(self) -> task.Task[Path]:
@@ -63,6 +64,7 @@ async def _cached_clone(key: str, url: str) -> Path:
     clones_dir.mkdir(exist_ok=True, parents=True)
     dest = clones_dir / key
     if dest.is_dir():
+        await dagon.proc.run(['git', 'fetch', '--all'], cwd=dest)
         return dest
     tmp = dest.with_suffix('.tmp')
     dagon.ui.status(f'Cloning Git repository {url}')

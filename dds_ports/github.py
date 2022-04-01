@@ -6,7 +6,7 @@ from aiohttp import client
 from semver import VersionInfo
 
 from .port import Port, PackageID
-from .util import tag_as_version, drop_nones
+from .util import tag_as_version
 
 HTTP_SESSION = client.ClientSession()
 HTTP_SEMAPHORE = Semaphore(6)
@@ -36,9 +36,18 @@ def session_context_manager() -> AsyncContextManager[client.ClientSession]:
     return HTTP_SESSION
 
 
+def _each_tag_as_version(owner: str, repo: str, tags: Iterable[str]) -> Iterable[VersionInfo]:
+    for t in tags:
+        ver = tag_as_version(t)
+        if ver is None:
+            print(f'Skipping tag "{t}" in {owner}/{repo}')
+            continue
+        yield ver
+
+
 async def repo_tags_as_versions(owner: str, repo: str) -> Iterable[VersionInfo]:
     tags = await get_repo_tags(owner, repo)
-    return drop_nones(tag_as_version(t) for t in tags)
+    return _each_tag_as_version(owner, repo, tags)
 
 
 def _tags_as_legacy_ports(tags: Iterable[str], owner: str, repo: str, pkg_name: Optional[str],
@@ -46,6 +55,9 @@ def _tags_as_legacy_ports(tags: Iterable[str], owner: str, repo: str, pkg_name: 
     from .legacy import LegacyDDSGitPort  # pylint: disable=cyclic-import
     for t in tags:
         ver = tag_as_version(t)
+        if ver is None:
+            print(f'Skipping tag "{ver}" in {owner}/{repo}')
+            continue
         if ver is None or ver < min_version:
             continue
         pid = PackageID(name=pkg_name or repo, version=ver, revision=1)

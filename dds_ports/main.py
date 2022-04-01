@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from typing import Iterable, NoReturn, Sequence, cast
 
+import dagon.proc
 import dagon.ext.exec
 import dagon.ext.loader
 import dagon.pool
@@ -18,7 +19,7 @@ from typing_extensions import Protocol
 
 from .collect import collect_ports
 from .github import session_context_manager
-from .port import Port
+from .port import Port, PackageID
 from .repo import RepositoryAccess
 
 
@@ -36,8 +37,10 @@ async def _import_from(repo: RepositoryAccess, pkgs: Iterable[task.Task[Path]]) 
     dirs = [await task.result_of(t) for t in pkgs]
     dagon.ui.status('Importing packages...')
     await proc.run(['./dds', 'repo', 'import', str(repo.directory), *dirs, '--if-exists=replace'], on_output='status')
-    dagon.ui.status('Validating repository...')
-    await proc.run(['./dds', 'repo', 'validate', str(repo.directory)], on_output='status')
+
+
+def make_importer(repo: RepositoryAccess, id: PackageID, prepper: task.Task[Path]) -> task.Task[None]:
+    return task.fn_task(f'{id}:import', lambda: _import_from(repo, [prepper]), depends=[prepper])
 
 
 def main(argv: Sequence[str]) -> int:
@@ -47,20 +50,26 @@ def main(argv: Sequence[str]) -> int:
     args = cast(CommandArguments, parser.parse_args(argv))
     dag = TaskDAG('<dds-ports-mkrepo>')
     ports = asyncio.get_event_loop().run_until_complete(_init_all_ports(args.ports_dir))
-    import_pkgs: list[task.Task[Path]] = []
+    import_pkgs: list[task.Task[None]] = []
 
     repo = RepositoryAccess.open(args.repo_dir)
     exts = dagon.tool.main.get_extensions()
     with exts.app_context():
-        dagon.pool.add('cloner', 6)
+        dagon.pool.add('cloner', 3)
+        dagon.pool.add('importer', 10)
         with populate_dag_context(dag):
             for p in ports:
                 prepper = p.make_prep_task()
-                if p.package_id not in repo.packages:
-                    import_pkgs.append(prepper)
+                if p.package_id in repo.packages:
+                    continue
+                importer = make_importer(repo, p.package_id, prepper)
+                dagon.pool.assign(importer, 'importer')
+                import_pkgs.append(importer)
 
-            importer = task.fn_task('import-pkgs', lambda: _import_from(repo, import_pkgs), depends=import_pkgs)
-            task.gather('all', [importer])
+            validate = dagon.proc.cmd_task('validate-repo', ['./dds', 'repo', 'validate', repo.directory],
+                                           on_output='status',
+                                           depends=import_pkgs)
+            task.gather('all', [validate])
 
         i: int = dagon.tool.main.run_for_dag(dag, exts, argv=[], default_tasks=['all'])
         return i

@@ -70,10 +70,11 @@ async def all_ports() -> port.PortIter:
     crs_placeholder['libraries'].append({
         'name': 'main',
         'path': 'libs/main',
+        'test-dependencies': [],
         'dependencies': [],
+        'test-using': [],
         'using': [{
             'lib': 'catch2',
-            'for': 'lib',
         }],
     })
     v2 = (

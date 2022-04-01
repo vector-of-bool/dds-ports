@@ -48,7 +48,9 @@ class LegacyDDSGitPort(SimpleGitPort):
                 'name': lib['name'],
                 'path': str(relpath),
                 'using': [],
+                'test-using': [],
                 'dependencies': list(lib_deps),
+                'test-dependencies': [],
             }
             yield crs_lib
 
@@ -56,17 +58,17 @@ class LegacyDDSGitPort(SimpleGitPort):
     def _fixup_dep_str(dep: str) -> crs.CRS_Dependency:
         s: str = dep
         if dep.startswith('neo-fun'):
-            s = f'{dep} using fun for lib'
+            s = f'{dep} using fun'
         if dep.startswith('neo-concepts'):
-            s = f'{dep} using concepts for lib'
+            s = f'{dep} using concepts'
         if dep.startswith('neo-buffer'):
-            s = f'{dep} using buffer for lib'
+            s = f'{dep} using buffer'
         if dep.startswith('neo-io'):
-            s = f'{dep} using io for lib'
+            s = f'{dep} using io'
         if dep.startswith('zlib'):
-            s = f'{dep} using zlib for lib'
+            s = f'{dep} using zlib'
         if dep.startswith('sqlite3'):
-            s = f'{dep} using sqlite3 for lib'
+            s = f'{dep} using sqlite3'
         return crs.convert_dep_str(s)
 
     def _fixup_dependencies(self, deps: Union[Sequence[str], dict[str, str]]) -> list[crs.CRS_Dependency]:

@@ -123,7 +123,7 @@ async def all_ports() -> Iterable[port.Port]:
             repo='inja',
             package_name='inja',
             library_name='inja',
-            depends=['nlohmann-json^3.0.0 using json for lib'],
+            depends=['nlohmann-json^3.0.0 using json'],
             min_version=VersionInfo(2, 1, 0),
         ),
         auto.enumerate_simple_github(
@@ -165,12 +165,12 @@ async def all_ports() -> Iterable[port.Port]:
             owner='ThePhD',
             repo='sol2',
             min_version=VersionInfo(3),
-            depends=['lua^5.0.0 using lua for lib'],
+            depends=['lua^5.0.0 using lua'],
         ),
         auto.enumerate_simple_github(
             owner='gabime',
             repo='spdlog',
-            depends=['fmt^6.0.0 using fmt for lib'],
+            depends=['fmt^6.0.0 using fmt'],
             min_version=VersionInfo(1, 4, 0),
             fs_transform=fixup_spdlog,
         ),
