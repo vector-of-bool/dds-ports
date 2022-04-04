@@ -73,9 +73,7 @@ async def all_ports() -> port.PortIter:
         'test-dependencies': [],
         'dependencies': [],
         'test-using': [],
-        'using': [{
-            'lib': 'catch2',
-        }],
+        'using': ['catch2'],
     })
     v2 = (
         auto.SimpleGitHubAdaptingPort(

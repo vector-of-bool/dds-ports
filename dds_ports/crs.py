@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import cast
 from typing_extensions import Literal, TypedDict
 from pathlib import Path
 import json
@@ -8,10 +7,6 @@ import re
 
 import semver
 
-CRS_LibraryUsing = TypedDict('CRS_LibraryUsing', {
-    'lib': str,
-    'for': Literal['lib', 'app', 'test'],
-})
 CRS_DepVersionRange = TypedDict('CRS_DepVersionRange', {
     'low': str,
     'high': str,
@@ -27,8 +22,8 @@ CRS_Library = TypedDict(
         'name': str,
         'dependencies': 'list[CRS_Dependency]',
         'test-dependencies': 'list[CRS_Dependency]',
-        'using': 'list[CRS_LibraryUsing]',
-        'test-using': 'list[CRS_LibraryUsing]',
+        'using': 'list[str]',
+        'test-using': 'list[str]',
     })
 
 CRS_JSON = TypedDict('CRS_JSON', {

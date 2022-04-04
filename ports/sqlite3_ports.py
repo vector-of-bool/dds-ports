@@ -123,9 +123,12 @@ class SQLite3Port:
         crs.write_crs_file(
             tmpdir,
             {
-                'name': 'sqlite3',
-                'version': str(self.version),
-                'pkg-version': 1,
+                'name':
+                'sqlite3',
+                'version':
+                str(self.version),
+                'pkg-version':
+                1,
                 'libraries': [{
                     'name': 'sqlite3',
                     'path': '.',
@@ -134,7 +137,8 @@ class SQLite3Port:
                     'dependencies': [],
                     'test-dependencies': [],
                 }],
-                'schema-version': 1,
+                'schema-version':
+                1,
             },
         )
         return tmpdir

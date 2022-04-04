@@ -6,7 +6,7 @@
 default: prepare-repo
 
 init-repo:
-	./dds repo init _ports-repo --name repo-2.dds.pizza --if-exists=ignore
+	./bpt repo init _ports-repo --name repo-2.dds.pizza --if-exists=ignore
 
 wget-repo-db:
 	mkdir -p _ports-repo
@@ -33,7 +33,7 @@ format-check:
 format:
 	poetry run yapf --in-place --recursive dds_ports/ ports/
 
-prepare-repo:
+prepare-repo: init-repo
 	poetry run dds-ports-mkrepo \
 		--ports-dir=ports/ \
 		--repo-dir=_ports-repo/

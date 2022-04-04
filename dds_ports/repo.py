@@ -28,5 +28,5 @@ class RepositoryAccess:
 
     @staticmethod
     def open(dirpath: Path) -> 'RepositoryAccess':
-        lines = subprocess.check_output(['./dds', 'repo', 'ls', str(dirpath)]).strip().splitlines()
+        lines = subprocess.check_output(['./bpt', 'repo', 'ls', str(dirpath)]).strip().splitlines()
         return RepositoryAccess(dirpath, (PackageID.parse(l.decode()) for l in lines))

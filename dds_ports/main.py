@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 from typing import Iterable, NoReturn, Sequence, cast
 
-import dagon.proc
 import dagon.ext.exec
 import dagon.ext.loader
 import dagon.pool
@@ -36,11 +35,11 @@ async def _init_all_ports(dirpath: Path) -> Iterable[Port]:
 async def _import_from(repo: RepositoryAccess, pkgs: Iterable[task.Task[Path]]) -> None:
     dirs = [await task.result_of(t) for t in pkgs]
     dagon.ui.status('Importing packages...')
-    await proc.run(['./dds', 'repo', 'import', str(repo.directory), *dirs, '--if-exists=replace'], on_output='status')
+    await proc.run(['./bpt', 'repo', 'import', str(repo.directory), *dirs, '--if-exists=replace'], on_output='status')
 
 
-def make_importer(repo: RepositoryAccess, id: PackageID, prepper: task.Task[Path]) -> task.Task[None]:
-    return task.fn_task(f'{id}:import', lambda: _import_from(repo, [prepper]), depends=[prepper])
+def make_importer(repo: RepositoryAccess, id_: PackageID, prepper: task.Task[Path]) -> task.Task[None]:
+    return task.fn_task(f'{id_}@import', lambda: _import_from(repo, [prepper]), depends=[prepper])
 
 
 def main(argv: Sequence[str]) -> int:
@@ -66,9 +65,9 @@ def main(argv: Sequence[str]) -> int:
                 dagon.pool.assign(importer, 'importer')
                 import_pkgs.append(importer)
 
-            validate = dagon.proc.cmd_task('validate-repo', ['./dds', 'repo', 'validate', repo.directory],
-                                           on_output='status',
-                                           depends=import_pkgs)
+            validate = proc.cmd_task('validate-repo', ['./bpt', 'repo', 'validate', repo.directory],
+                                     on_output='status',
+                                     depends=import_pkgs)
             task.gather('all', [validate])
 
         i: int = dagon.tool.main.run_for_dag(dag, exts, argv=[], default_tasks=['all'])
