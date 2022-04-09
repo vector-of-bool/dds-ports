@@ -2,7 +2,7 @@
 
 variables:
   shouldDeploy: >-
-    ${{ eq(variables['Build.SourceBranch'], 'refs/heads/master') }}
+    ${{ eq(variables['Build.SourceBranch'], 'refs/heads/feature/crs-repo') }}
 
 jobs:
   - job: main_job
@@ -10,10 +10,6 @@ jobs:
     pool:
       vmImage: ubuntu-20.04
     steps:
-      - script: sudo apt-get -y install wget
-        displayName: Install wget
-      - script: make wget-repo-db
-        displayName: Download Current Repository Database
       - script: python3 -m pip install poetry
         displayName: Install Poetry
       - script: poetry install
@@ -28,8 +24,8 @@ jobs:
         displayName: Deploy Repository
         condition: and(succeeded(), eq(variables.shouldDeploy, 'true'))
         inputs:
-          sshEndpoint: dds.pizza
+          sshEndpoint: bpt.pizza
           sourceFolder: _ports-repo/
-          targetFolder: www/repo-2-ci/
+          targetFolder: www/repo-3/
           failOnEmptySource: true
           overwrite: true
