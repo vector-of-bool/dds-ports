@@ -24,7 +24,7 @@ jobs:
         displayName: Deploy Repository
         condition: and(succeeded(), eq(variables.shouldDeploy, 'true'))
         inputs:
-          sshEndpoint: bpt.pizza
+          sshEndpoint: bpt.pizza-deploy
           sourceFolder: _ports-repo/
           targetFolder: www/repo-3/
           failOnEmptySource: true
