@@ -6,7 +6,7 @@
 default: prepare-repo
 
 init-repo:
-	./bpt repo init _ports-repo --name repo-2.dds.pizza --if-exists=ignore
+	./bpt repo init _ports-repo --name repo-3.bpt.pizza --if-exists=ignore
 
 wget-repo-db:
 	mkdir -p _ports-repo
