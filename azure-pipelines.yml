@@ -2,7 +2,7 @@
 
 variables:
   shouldDeploy: >-
-    ${{ eq(variables['Build.SourceBranch'], 'refs/heads/feature/crs-repo') }}
+    ${{ eq(variables['Build.SourceBranch'], 'refs/heads/master') }}
 
 jobs:
   - job: main_job
