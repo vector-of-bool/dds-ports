@@ -13,7 +13,7 @@ HTTP_SEMAPHORE = Semaphore(6)
 
 
 async def github_http_get(path: str) -> Any:
-    token = os.getenv('GITHUB_API_TOKEN')
+    token = os.getenv('GITHUB_API_TOKEN', os.getenv('GITHUB_TOKEN'))
     if token is None:
         raise RuntimeError('Set a GITHUB_API_TOKEN environment variable to talk with GitHub, please')
     headers = {
