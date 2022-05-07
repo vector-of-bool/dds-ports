@@ -61,7 +61,11 @@ def _tags_as_legacy_ports(tags: Iterable[str], owner: str, repo: str, pkg_name: 
         if ver is None or ver < min_version:
             continue
         pid = PackageID(name=pkg_name or repo, version=ver, revision=1)
-        yield LegacyDDSGitPort(pid, f'https://github.com/{owner}/{repo}.git', t)
+        yield LegacyDDSGitPort(pid, gh_repo_url(owner, repo), t)
+
+
+def gh_repo_url(owner: str, repo: str) -> str:
+    return f'https://github.com/{owner}/{repo}.git'
 
 
 async def native_dds_ports_for_github_repo(*,

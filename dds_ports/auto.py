@@ -86,7 +86,7 @@ class SimpleGitHubAdaptingPort(NamedTuple):
         simple = git.SimpleGitPort(
             f'gh/{self.owner}/{self.repo}',
             self.package_id,
-            f'https://github.com/{self.owner}/{self.repo}.git',
+            github.gh_repo_url(self.owner, self.repo),
             self.tag,
         ).make_prep_task()
         return task.fn_task(f'{self.package_id}@fixup', lambda: self._prep_crs(simple), depends=[simple])
