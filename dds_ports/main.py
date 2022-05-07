@@ -34,7 +34,7 @@ async def _init_all_ports(dirpath: Path) -> Iterable[Port]:
 
 async def _import_from(repo: RepositoryAccess, id_: PackageID, pkg: task.Task[Path], imported: set[PackageID]) -> None:
     d = await task.result_of(pkg)
-    dagon.ui.status('Importing packages...')
+    dagon.ui.status(f'Importing {id_}')
     await proc.run(['./bpt', 'repo', 'import', str(repo.directory), d, '--if-exists=replace'], on_output='status')
     dagon.ui.print(f'New package imported: {id_}')
     imported.add(id_)
