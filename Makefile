@@ -10,7 +10,7 @@ init-repo:
 
 wget-repo-db:
 	mkdir -p _ports-repo
-	wget https://repo-2.dds.pizza/repo.db -O _ports-repo/repo.db || \
+	wget https://repo-3.bpt.pizza/repo.db -O _ports-repo/repo.db || \
 		$(MAKE) init-repo
 
 precheck: pylint mypy format-check

@@ -26,7 +26,9 @@ jobs:
       - name: Build the Repository
         env:
           GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: poetry run make -j4 prepare-repo precheck
+        run: |
+          make wget-repo-db && \
+          poetry run make -j4 prepare-repo precheck
       - name: Save the Repository
         uses: actions/upload-artifact@v3
         with:

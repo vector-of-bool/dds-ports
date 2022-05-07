@@ -32,14 +32,17 @@ async def _init_all_ports(dirpath: Path) -> Iterable[Port]:
         return await collect_ports(dirpath)
 
 
-async def _import_from(repo: RepositoryAccess, pkgs: Iterable[task.Task[Path]]) -> None:
-    dirs = [await task.result_of(t) for t in pkgs]
+async def _import_from(repo: RepositoryAccess, id_: PackageID, pkg: task.Task[Path], imported: set[PackageID]) -> None:
+    d = await task.result_of(pkg)
     dagon.ui.status('Importing packages...')
-    await proc.run(['./bpt', 'repo', 'import', str(repo.directory), *dirs, '--if-exists=replace'], on_output='status')
+    await proc.run(['./bpt', 'repo', 'import', str(repo.directory), d, '--if-exists=replace'], on_output='status')
+    dagon.ui.print(f'New package imported: {id_}')
+    imported.add(id_)
 
 
-def make_importer(repo: RepositoryAccess, id_: PackageID, prepper: task.Task[Path]) -> task.Task[None]:
-    return task.fn_task(f'{id_}@import', lambda: _import_from(repo, [prepper]), depends=[prepper])
+def make_importer(repo: RepositoryAccess, id_: PackageID, prepper: task.Task[Path],
+                  imported: set[PackageID]) -> task.Task[None]:
+    return task.fn_task(f'{id_}@import', lambda: _import_from(repo, id_, prepper, imported), depends=[prepper])
 
 
 def main(argv: Sequence[str]) -> int:
@@ -53,6 +56,7 @@ def main(argv: Sequence[str]) -> int:
 
     repo = RepositoryAccess.open(args.repo_dir)
     exts = dagon.tool.main.get_extensions()
+    imported: set[PackageID] = set()
     with exts.app_context():
         dagon.pool.add('cloner', 3)
         dagon.pool.add('importer', 10)
@@ -61,7 +65,7 @@ def main(argv: Sequence[str]) -> int:
                 prepper = p.make_prep_task()
                 if p.package_id in repo.packages:
                     continue
-                importer = make_importer(repo, p.package_id, prepper)
+                importer = make_importer(repo, p.package_id, prepper, imported)
                 dagon.pool.assign(importer, 'importer')
                 import_pkgs.append(importer)
 
@@ -71,7 +75,14 @@ def main(argv: Sequence[str]) -> int:
             task.gather('all', [validate])
 
         i: int = dagon.tool.main.run_for_dag(dag, exts, argv=[], default_tasks=['all'])
-        return i
+
+    if imported:
+        print('The following packages were imported:')
+        for pid in sorted(imported):
+            print(f'  - {pid}')
+    else:
+        print('No new packages were imported')
+    return i
 
 
 def start() -> NoReturn:

@@ -63,6 +63,7 @@ async def _cached_clone(key: str, url: str) -> Path:
     clones_dir.mkdir(exist_ok=True, parents=True)
     dest = clones_dir / key
     if dest.is_dir():
+        dagon.ui.status(f'Re-fetching git repository {url}')
         await dagon.proc.run(['git', 'fetch', '--all'], cwd=dest)
         return dest
     tmp = dest.with_suffix('.tmp')
