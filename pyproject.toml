@@ -24,3 +24,28 @@ dds-ports-mkrepo = "dds_ports.main:start"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.yapf]
+based_on_style = "pep8"
+column_limit = 120
+
+[tool.pylint.MASTER]
+jobs = 8
+persistent = true
+disable = [
+    "C",
+    "too-few-public-methods",
+    "redefined-outer-name",
+]
+
+[tool.pylint.REPORTS]
+reports = false
+score = true
+output-format = "colorized"
+
+[tool.mypy]
+strict=true
+ignore_missing_imports=true
+incremental=true
+sqlite_cache=true
+mypy_path = "tools/"
