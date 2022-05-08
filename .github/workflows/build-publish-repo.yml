@@ -3,6 +3,7 @@ on: [push, pull_request]
 
 jobs:
   build:
+    name: Generate Repository
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
@@ -37,6 +38,7 @@ jobs:
 
   deploy:
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/feature/gh-workflow'
+    name: Publish Repository
     runs-on: ubuntu-20.04
     environment: repo-3.bpt.pizza
     needs: [build]
