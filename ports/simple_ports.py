@@ -34,6 +34,10 @@ async def fixup_fmt_8(root: Path) -> None:
     await fs.remove_files([Path(root / 'src/fmt.cc')])
 
 
+async def fixup_taskflow(root: Path) -> None:
+    await fs.move_files(files=root.glob('taskflow/**/*'), into=root / 'src/', whence=root)
+
+
 async def all_ports() -> Iterable[port.Port]:
     return itertools.chain.from_iterable(await util.wait_all((
         auto.enumerate_simple_github(
@@ -179,6 +183,11 @@ async def all_ports() -> Iterable[port.Port]:
             repo='text',
             package_name='ztd.text',
             library_name='text',
+        ),
+        auto.enumerate_simple_github(
+            owner='taskflow',
+            repo='taskflow',
+            fs_transform=fixup_taskflow,
         ),
         auto.enumerate_simple_github(
             owner='jbeder',

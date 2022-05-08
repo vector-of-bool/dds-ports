@@ -4,7 +4,7 @@ from typing import Awaitable, TypeVar, Callable, Iterable
 from pathlib import Path
 import shutil
 
-_FS_POOL = concurrent.futures.ThreadPoolExecutor(8)
+_FS_POOL = concurrent.futures.ThreadPoolExecutor(8)  # pylint: disable=consider-using-with
 
 T = TypeVar('T')
 
