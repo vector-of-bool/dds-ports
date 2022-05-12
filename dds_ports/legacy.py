@@ -32,7 +32,7 @@ class LegacyDDSGitPort(SimpleGitPort):
     @staticmethod
     def _fixup_libraries(dirpath: Path, deps: Sequence[crs.CRS_Dependency],
                          force_name: str) -> Iterable[crs.CRS_Library]:
-        for libdir, lib in read_library_jsons(dirpath):
+        for libdir, _lib in read_library_jsons(dirpath):
             relpath = libdir.relative_to(dirpath)
             lib_deps = deepcopy(deps)
             crs_lib: crs.CRS_Library = {

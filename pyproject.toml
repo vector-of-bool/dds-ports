@@ -42,6 +42,7 @@ disable = [
 reports = false
 score = true
 output-format = "colorized"
+disable = ["R", "I"]
 
 [tool.mypy]
 strict=true
