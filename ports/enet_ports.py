@@ -62,6 +62,5 @@ async def all_ports() -> port.PortIter:
         owner='lsalzman',
         repo='enet',
         package_name='enet',
-        library_name='enet',
         fs_transform=fixup_enet,
     )

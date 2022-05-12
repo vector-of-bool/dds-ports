@@ -194,6 +194,5 @@ async def all_ports() -> port.PortIter:
         repo='libsodium',
         min_version=VersionInfo(1, 0, 10),
         package_name='libsodium',
-        library_name='sodium',
         fs_transform=fixup_libsodium,
     )

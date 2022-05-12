@@ -50,8 +50,12 @@ async def repo_tags_as_versions(owner: str, repo: str) -> Iterable[VersionInfo]:
     return _each_tag_as_version(owner, repo, tags)
 
 
-def _tags_as_legacy_ports(tags: Iterable[str], owner: str, repo: str, pkg_name: Optional[str],
-                          min_version: VersionInfo) -> Iterable[Port]:
+def _tags_as_legacy_ports(tags: Iterable[str],
+                          owner: str,
+                          repo: str,
+                          pkg_name: Optional[str],
+                          min_version: VersionInfo,
+                          revision: int = 1) -> Iterable[Port]:
     from .legacy import LegacyDDSGitPort  # pylint: disable=cyclic-import
     for t in tags:
         ver = tag_as_version(t)
@@ -60,7 +64,7 @@ def _tags_as_legacy_ports(tags: Iterable[str], owner: str, repo: str, pkg_name: 
             continue
         if ver is None or ver < min_version:
             continue
-        pid = PackageID(name=pkg_name or repo, version=ver, revision=1)
+        pid = PackageID(name=pkg_name or repo, version=ver, revision=revision)
         yield LegacyDDSGitPort(pid, gh_repo_url(owner, repo), t)
 
 
@@ -72,7 +76,8 @@ async def native_dds_ports_for_github_repo(*,
                                            owner: str,
                                            repo: str,
                                            pkg_name: Optional[str] = None,
-                                           min_version: VersionInfo = VersionInfo(0)) -> Iterable[Port]:
+                                           min_version: VersionInfo = VersionInfo(0),
+                                           revision: int = 1) -> Iterable[Port]:
     tags = await get_repo_tags(owner, repo)
     print(f'Generating ports for {owner}/{repo}')
-    return _tags_as_legacy_ports(tags, owner, repo, pkg_name, min_version)
+    return _tags_as_legacy_ports(tags, owner, repo, pkg_name, min_version, revision)

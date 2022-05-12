@@ -137,7 +137,6 @@ async def enumerate_simple_github(
     min_version: VersionInfo = VersionInfo(0),
     max_version: VersionInfo = VersionInfo(99999999),
     package_name: Optional[str] = None,
-    library_name: Optional[str] = None,
     depends: Optional[Sequence[str]] = None,
     fs_transform: Optional[FSTransformFn] = None,
     pkg_version: int = 1,
@@ -159,7 +158,7 @@ async def enumerate_simple_github(
             1,
             'libraries': [{
                 'path': '.',
-                'name': library_name or repo,
+                'name': package_name or repo,
                 'using': [],
                 'test-using': [],
                 'dependencies': [crs.convert_dep_str(d) for d in (depends or [])],
