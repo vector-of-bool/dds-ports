@@ -44,16 +44,19 @@ async def all_ports() -> Iterable[port.Port]:
             owner='zajo',
             repo='leaf',
             package_name='boost.leaf',
+            pkg_version=2,
         ),
         auto.enumerate_simple_github(
             owner='boostorg',
             repo='mp11',
             package_name='boost.mp11',
+            pkg_version=2,
         ),
         auto.enumerate_simple_github(
             owner='apolukhin',
             repo='magic_get',
             package_name='boost.pfr',
+            pkg_version=2,
         ),
         auto.enumerate_simple_github(
             owner='hanickadot',
@@ -98,11 +101,13 @@ async def all_ports() -> Iterable[port.Port]:
             repo='json',
             min_version=VersionInfo(3, 5, 0),
             package_name='nlohmann-json',
+            pkg_version=2,
         ),
         auto.enumerate_simple_github(
             owner='vector-of-bool',
             repo='wil',
             package_name='ms-wil',
+            pkg_version=2,
         ),
         auto.enumerate_simple_github(
             owner='taocpp',
@@ -117,6 +122,7 @@ async def all_ports() -> Iterable[port.Port]:
             package_name='inja',
             depends=['nlohmann-json^3.0.0 using nlohmann-json'],
             min_version=VersionInfo(2, 1, 0),
+            pkg_version=2,
         ),
         auto.enumerate_simple_github(
             owner='USCiLab',
@@ -142,6 +148,7 @@ async def all_ports() -> Iterable[port.Port]:
             package_name='hinnant-date',
             min_version=VersionInfo(2, 4, 1),
             fs_transform=_remove_src,
+            pkg_version=2,
         ),
         auto.enumerate_simple_github(
             owner='lua',
@@ -166,6 +173,7 @@ async def all_ports() -> Iterable[port.Port]:
             owner='soasis',
             repo='text',
             package_name='ztd.text',
+            pkg_version=2,
         ),
         auto.enumerate_simple_github(
             owner='taskflow',
