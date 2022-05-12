@@ -24,7 +24,7 @@ class LegacyDDSGitPort(SimpleGitPort):
             dirpath, {
                 'name': package_json['name'],
                 'version': package_json['version'],
-                'pkg-version': 1,
+                'pkg-version': self.package_id.revision,
                 'libraries': list(self._fixup_libraries(dirpath, deps, package_json['name'])),
                 'schema-version': 1,
             })
