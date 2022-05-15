@@ -108,12 +108,13 @@ def _tag_as_version(tag: str, owner: str, repo: str) -> VersionInfo | None:
 
 
 async def get_repo_ports(owner: str, repo: str, *, min_version: VersionInfo, max_version: VersionInfo,
-                         crs_json: crs.CRS_JSON, fs_transform: FSTransformFn, try_build: bool) -> Iterable[Port]:
+                         crs_json: crs.CRS_JSON, fs_transform: FSTransformFn, try_build: bool,
+                         pkg_version: int) -> Iterable[Port]:
     tags = list(await github.get_repo_tags(owner, repo))
     tagged_versions = list((tag, _tag_as_version(tag, owner, repo)) for tag in tags)
     return (  #
         SimpleGitHubAdaptingPort(
-            package_id=PackageID(crs_json['name'], version, revision=1),
+            package_id=PackageID(crs_json['name'], version, revision=pkg_version),
             owner=owner,
             repo=repo,
             tag=tag,
@@ -167,4 +168,5 @@ async def enumerate_simple_github(
         },
         fs_transform=fs_transform or _null_transform,
         try_build=try_build,
+        pkg_version=pkg_version,
     )
