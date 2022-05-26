@@ -31,7 +31,7 @@ CRS_JSON = TypedDict('CRS_JSON', {
     'version': str,
     'pkg-version': int,
     'libraries': 'list[CRS_Library]',
-    'schema-version': Literal[1],
+    'schema-version': Literal[0],
 })
 
 _DEP_SPLIT_RE = re.compile(r'^(.+?)([@^~+])(.+) using ((?:[\w\.-]+)(?:, [\w\.-]+)*)$')
@@ -87,5 +87,5 @@ def simple_placeholder_json(library: str) -> CRS_JSON:
             'test-dependencies': [],
         }],
         'schema-version':
-        1,
+        0,
     }

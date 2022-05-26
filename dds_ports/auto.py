@@ -156,7 +156,7 @@ async def enumerate_simple_github(
             'version':
             '[placeholder]',
             'schema-version':
-            1,
+            0,
             'libraries': [{
                 'path': '.',
                 'name': package_name or repo,

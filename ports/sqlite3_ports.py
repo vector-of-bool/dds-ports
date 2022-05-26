@@ -138,7 +138,7 @@ class SQLite3Port:
                     'test-dependencies': [],
                 }],
                 'schema-version':
-                1,
+                0,
             },
         )
         return tmpdir

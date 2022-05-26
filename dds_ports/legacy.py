@@ -26,7 +26,7 @@ class LegacyDDSGitPort(SimpleGitPort):
                 'version': package_json['version'],
                 'pkg-version': self.package_id.revision,
                 'libraries': list(self._fixup_libraries(dirpath, deps, package_json['name'])),
-                'schema-version': 1,
+                'schema-version': 0,
             })
 
     @staticmethod
