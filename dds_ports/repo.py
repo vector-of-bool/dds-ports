@@ -7,7 +7,6 @@ from .port import PackageID
 
 
 class RepositoryAccess:
-
     def __init__(self, dirpath: Path, pkgs: Iterable[PackageID]) -> None:
         self._dirpath = dirpath
         self._pkgs = set(pkgs)

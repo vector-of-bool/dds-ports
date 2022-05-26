@@ -23,7 +23,6 @@ class PackageID(NamedTuple):
 
 
 class Port(Protocol):
-
     @property
     def package_id(self) -> PackageID:
         ...

@@ -109,7 +109,6 @@ async def prep_sqlite3_dir(destdir: Path, url: str, version: VersionInfo) -> Non
 
 
 class SQLite3Port:
-
     def __init__(self, year: int, version: VersionInfo) -> None:
         self.year = year
         self.version = version
