@@ -29,6 +29,7 @@ async def temporary_git_clone(url: str, tag_or_branch: str) -> AsyncIterator[Pat
 
 
 class SimpleGitPort:
+
     def __init__(self, clone_key: str, pkg_id: PackageID, url: str, tag: str) -> None:
         self._clone_key = clone_key
         self._pid = pkg_id

@@ -14,6 +14,7 @@ from .git import SimpleGitPort
 
 
 class LegacyDDSGitPort(SimpleGitPort):
+
     def __init__(self, pkg_id: PackageID, url: str, tag: str) -> None:
         super().__init__(pkg_id.name, pkg_id, url, tag)
 
