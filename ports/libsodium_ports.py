@@ -192,9 +192,8 @@ async def all_ports() -> port.PortIter:
     return await auto.enumerate_simple_github(
         owner='jedisct1',
         repo='libsodium',
-        namespace='sodium',
         min_version=VersionInfo(1, 0, 10),
         package_name='libsodium',
-        library_name='sodium',
         fs_transform=fixup_libsodium,
+        pkg_version=2,
     )

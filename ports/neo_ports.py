@@ -30,6 +30,7 @@ def all_neo_packages() -> Iterable[NeoPackageSpec]:
 
 async def all_ports() -> Iterable[Port]:
     ports = await wait_all(
-        github.native_dds_ports_for_github_repo(owner='vector-of-bool', repo=pkg.name, min_version=pkg.min_version)
+        github.native_dds_ports_for_github_repo(
+            owner='vector-of-bool', repo=pkg.name, min_version=pkg.min_version, revision=2)
         for pkg in all_neo_packages())
     return itertools.chain.from_iterable(ports)

@@ -5,8 +5,13 @@
 
 default: prepare-repo
 
+init-repo:
+	./bpt repo init _ports-repo --name repo-3.bpt.pizza --if-exists=ignore
+
 wget-repo-db:
-	wget https://repo-1.dds.pizza/repo.db -P _ports-repo
+	mkdir -p _ports-repo
+	wget https://repo-3.bpt.pizza/repo.db -O _ports-repo/repo.db || \
+		$(MAKE) init-repo
 
 precheck: pylint mypy format-check
 
@@ -28,7 +33,7 @@ format-check:
 format:
 	poetry run yapf --in-place --recursive dds_ports/ ports/
 
-prepare-repo:
+prepare-repo: init-repo
 	poetry run dds-ports-mkrepo \
 		--ports-dir=ports/ \
 		--repo-dir=_ports-repo/

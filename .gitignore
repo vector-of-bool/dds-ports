@@ -3,3 +3,6 @@ _ports-repo/
 __pycache__/
 *.egg-info/
 .vscode/
+_build/
+_git/
+.dagon.db
