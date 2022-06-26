@@ -11,7 +11,7 @@ from semver import VersionInfo
 
 T = TypeVar('T')
 
-TAG_VERSION_RE = re.compile(r'(?:v|boost-|yaml-cpp-|release-)?(\d+\.\d+(\.\d+)?(-.*|$))')
+TAG_VERSION_RE = re.compile(r'(?:v|boost-|yaml-cpp-|release-|pegtl-)?(\d+\.\d+(\.\d+)?([-.].*|$))')
 
 
 async def wait_all(futs: Iterable[Awaitable[T]]) -> Iterable[T]:
@@ -21,26 +21,23 @@ async def wait_all(futs: Iterable[Awaitable[T]]) -> Iterable[T]:
 def tag_as_version(tag: str) -> Optional[VersionInfo]:
     mat = TAG_VERSION_RE.match(tag)
     if not mat:
-        print(f'Skipping non-version tag: {tag}')
         return None
     ver_str = mat.group(1)
+    ver_str = re.sub(r'^(\d+\.\d+)($|-)', r'\1.0\2', ver_str)
+    ver_str = re.sub(r'^(\d+\.\d+\.\d+)\.', r'\1-', ver_str)
     try:
         return VersionInfo.parse(ver_str)
     except ValueError:
-        print(f'Failed to parse version-like tag "{tag}"')
+        print(f'Failed to parse version-like tag "{tag}" ({ver_str})')
         return None
 
 
-def drop_nones(it: Iterable[Optional[T]]) -> Iterable[T]:
-    return (item for item in it if item is not None)
-
-
 @contextmanager
-def temporary_directory() -> Iterator[Path]:
+def temporary_directory(suffix: str = 'dds-ports') -> Iterator[Path]:
     """
     Obtain a temporary directory that will be automatically deleted
     """
-    tdir = Path(tempfile.mkdtemp(suffix='-dds-ports'))
+    tdir = Path(tempfile.mkdtemp(suffix='-' + suffix))
     try:
         tdir.mkdir(exist_ok=True, parents=True)
         yield tdir
@@ -51,7 +48,7 @@ def temporary_directory() -> Iterator[Path]:
 async def run_process(command: Sequence[str]) -> None:
     proc = await asyncio.create_subprocess_exec(*command,
                                                 stdin=asyncio.subprocess.PIPE,
-                                                stdout=None,
+                                                stdout=asyncio.subprocess.PIPE,
                                                 stderr=asyncio.subprocess.STDOUT)
     output, _ = await proc.communicate()
     retc = await proc.wait()

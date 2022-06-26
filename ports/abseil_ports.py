@@ -4,6 +4,7 @@ from pathlib import Path
 from semver import VersionInfo
 
 from dds_ports import auto, port, fs
+from dds_ports.crs import simple_placeholder_json
 
 
 async def fixup_abseil(root: Path) -> None:
@@ -38,19 +39,11 @@ async def all_ports() -> port.PortIter:
     ]
 
     return (auto.SimpleGitHubAdaptingPort(
-        package_id=port.PackageID('abseil', VersionInfo.parse(version_str)),
+        package_id=port.PackageID('abseil', VersionInfo.parse(version_str), 1),
         owner='abseil',
         repo='abseil-cpp',
         tag=tag,
-        package_json={
-            'name': 'abseil',
-            'namespace': 'abseil',
-            'depends': [],
-        },
-        library_json={
-            'name': 'abseil',
-            'uses': [],
-        },
+        crs_json=simple_placeholder_json('abseil'),
         fs_transform=fixup_abseil,
         try_build=False,
     ) for tag, version_str in tags)

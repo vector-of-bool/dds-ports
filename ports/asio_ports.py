@@ -2,7 +2,7 @@ from pathlib import Path
 from semver import VersionInfo
 import re
 
-from dds_ports import auto, port, fs, github
+from dds_ports import auto, port, fs, github, crs
 
 
 async def fixup_asio(root: Path) -> None:
@@ -32,19 +32,11 @@ async def all_ports() -> port.PortIter:
     versions = ((tag, VersionInfo.parse(ver_str)) for tag, ver_str in version_strs)
 
     return (auto.SimpleGitHubAdaptingPort(
-        package_id=port.PackageID('asio', version),
+        package_id=port.PackageID('asio', version, 1),
         owner=owner,
         repo='asio',
         tag=tag,
-        package_json={
-            'name': 'asio',
-            'namespace': 'asio',
-            'depends': [],
-        },
-        library_json={
-            'name': 'asio',
-            'uses': [],
-        },
+        crs_json=crs.simple_placeholder_json('asio'),
         fs_transform=fixup_asio,
         try_build=version != VersionInfo(1, 16, 0),
     ) for tag, version in versions if version >= VersionInfo(1, 12, 0))

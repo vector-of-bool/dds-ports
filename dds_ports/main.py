@@ -1,17 +1,24 @@
+from __future__ import annotations
+
 import argparse
 import asyncio
-from pathlib import Path
-from typing import Sequence, NoReturn
-from typing_extensions import Protocol
 import sys
+from pathlib import Path
+from typing import Iterable, NoReturn, Sequence, cast
 
-import json5
-from semver import VersionInfo
+import dagon.ext.exec
+import dagon.ext.loader
+import dagon.pool
+import dagon.tool.main
+import dagon.ui
+from dagon import proc, task
+from dagon.task import TaskDAG
+from dagon.task.dag import populate_dag_context
+from typing_extensions import Protocol
 
-from .port import Port, PackageID
-from .collect import all_ports
+from .collect import collect_ports
 from .github import session_context_manager
-from .util import wait_all, temporary_directory, run_process
+from .port import Port, PackageID
 from .repo import RepositoryAccess
 
 
@@ -20,61 +27,67 @@ class CommandArguments(Protocol):
     repo_dir: Path
 
 
-def check_sdist(pid: PackageID, dirpath: Path) -> None:
-    cand_files = ('package.json', 'package.json5', 'package.jsonc')
-    candidates = (dirpath / fname for fname in cand_files)
-    found = [c for c in candidates if c.is_file()]
-    if not found:
-        raise RuntimeError(f'Port for {pid} did not produce a package JSON manifest file')
-
-    content = json5.loads(found[0].read_text())
-    if not isinstance(content, dict) or not 'name' in content or not 'version' in content:
-        raise RuntimeError(f'Package manifest for {pid} is invalid (Got: {content})')
-    try:
-        manver = VersionInfo.parse(content['version'])
-    except ValueError as e:
-        raise RuntimeError(f'"version" for {pid} is not a valid semantic version (Got {content["version"]})') from e
-    if content['name'] != pid.name:
-        raise RuntimeError(f'Package manifest for {pid} declares different name "{content["name"]}')
-    if manver != pid.version:
-        raise RuntimeError(f'Package manifest for {pid} declares a different version [{manver}]')
-
-    if not dirpath.joinpath('src').is_dir() and not dirpath.joinpath('include').is_dir():
-        raise RuntimeError(f'Package {pid} does not contain either a src/ or include/ directory')
-    print(f'Package {pid} is OK')
-
-
-async def _import_port(port: Port, repo: RepositoryAccess) -> None:
-    if port.package_id in repo.packages:
-        print('Skipping import of already-imported package:', port.package_id)
-        return
-    async with port.prepare_sdist() as sdist_dir:
-        check_sdist(port.package_id, sdist_dir)
-        with temporary_directory() as sd_create_dir:
-            sd_file = sd_create_dir / f'{port.package_id}.tar.gz'
-            print(f'Archiving {port.package_id}...')
-            await run_process(['./dds', 'pkg', 'create', f'--project={sdist_dir}', f'--out={sd_file}'])
-            print(f'Storing {port.package_id}')
-            await run_process(['./dds', 'repoman', 'import', str(repo.directory), str(sd_file)])
-
-
-async def _main(args: CommandArguments) -> int:
-    repo = await RepositoryAccess.open(args.repo_dir)
-
+async def _init_all_ports(dirpath: Path) -> Iterable[Port]:
     async with session_context_manager():
-        found = await all_ports(args.ports_dir)
-        await wait_all(_import_port(p, repo) for p in found)
+        return await collect_ports(dirpath)
 
-    return 0
+
+async def _import_from(repo: RepositoryAccess, id_: PackageID, pkg: task.Task[Path], imported: set[PackageID]) -> None:
+    d = await task.result_of(pkg)
+    dagon.ui.status(f'Importing {id_}')
+    await proc.run(['./bpt', 'repo', 'import', str(repo.directory), d, '--if-exists=replace'], on_output='status')
+    dagon.ui.print(f'New package imported: {id_}')
+    imported.add(id_)
+
+
+def make_importer(repo: RepositoryAccess, id_: PackageID, prepper: task.Task[Path],
+                  imported: set[PackageID]) -> task.Task[None]:
+    return task.fn_task(f'{id_}@import', lambda: _import_from(repo, id_, prepper, imported), depends=[prepper])
 
 
 def main(argv: Sequence[str]) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('--ports-dir', type=Path, required=True, help='Root directory of the ports directories')
     parser.add_argument('--repo-dir', type=Path, required=True, help='Directory containing the dds repository')
-    args: CommandArguments = parser.parse_args(argv)
-    return asyncio.get_event_loop().run_until_complete(_main(args))
+    args = cast(CommandArguments, parser.parse_args(argv))
+    dag = TaskDAG('<dds-ports-mkrepo>')
+    ports = asyncio.get_event_loop().run_until_complete(_init_all_ports(args.ports_dir))
+    import_pkgs: list[task.Task[None]] = []
+
+    repo = RepositoryAccess.open(args.repo_dir)
+    exts = dagon.tool.main.get_extensions()
+    imported: set[PackageID] = set()
+    with exts.app_context():
+        dagon.pool.add('cloner', 3)
+        dagon.pool.add('importer', 10)
+        with populate_dag_context(dag):
+            for p in ports:
+                prepper = p.make_prep_task()
+                if p.package_id in repo.packages:
+                    continue
+                importer = make_importer(repo, p.package_id, prepper, imported)
+                dagon.pool.assign(importer, 'importer')
+                import_pkgs.append(importer)
+
+            validate = proc.cmd_task('validate-repo', ['./bpt', 'repo', 'validate', repo.directory],
+                                     on_output='status',
+                                     depends=import_pkgs)
+            task.gather('all', [validate])
+
+        i: int = dagon.tool.main.run_for_dag(dag, exts, argv=[], default_tasks=['all'])
+
+    if imported:
+        print('The following packages were imported:')
+        for pid in sorted(imported):
+            print(f'  - {pid}')
+    else:
+        print('No new packages were imported')
+    return i
 
 
 def start() -> NoReturn:
     sys.exit(main(sys.argv[1:]))
+
+
+if __name__ == '__main__':
+    start()
