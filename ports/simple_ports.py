@@ -165,9 +165,10 @@ async def all_ports() -> Iterable[port.Port]:
         auto.enumerate_simple_github(
             owner='gabime',
             repo='spdlog',
-            depends=['fmt^6.0.0 using fmt'],
+            depends=['fmt+6.0.0 using fmt'],
             min_version=VersionInfo(1, 4, 0),
             fs_transform=fixup_spdlog,
+            pkg_version=2,
         ),
         auto.enumerate_simple_github(
             owner='soasis',
