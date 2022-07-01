@@ -16,9 +16,9 @@ wget-repo-db:
 precheck: pylint mypy format-check
 
 mypy:
-	echo Checking with mypy...
-	poetry run mypy dds_ports/ ports/
-	echo Checking with mypy... OK
+	echo Checking with pyright...
+	poetry run pyright dds_ports/ ports/
+	echo Checking with pyright... OK
 
 pylint:
 	echo Checking with pylint...

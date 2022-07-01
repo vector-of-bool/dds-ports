@@ -139,14 +139,14 @@ backends: Sequence[BackendInfo] = [
 ]
 
 
-def select_files(dir: Path, pattern: str) -> Iterable[Path]:
-    return dir.glob(pattern)
-    # XXX: The below check can be used to validate that patterns match anything.
-    #      Files were added/removed across versions, so this should only be used
-    #      to validate against a specific known ImGui version.
-    found = tuple(dir.glob(pattern))
-    assert found, f'No files matched pattern "{pattern}"'
-    return found
+def select_files(path: Path, pattern: str) -> Iterable[Path]:
+    return path.glob(pattern)
+    ## The below check can be used to validate that patterns match anything.
+    ## Files were added/removed across versions, so this should only be used
+    ## to validate against a specific known ImGui version.
+    # found = tuple(dir.glob(pattern))
+    # assert found, f'No files matched pattern "{pattern}"'
+    # return found
 
 
 inc_re = re.compile(r'#include\s+"(imgui.+)".*')
@@ -200,7 +200,7 @@ def wrap_file_cond(path: Path, content: str, cond: Condition) -> str:
             #endif
         ''')
     else:
-        before = f'#define __BPT_IMGUI_NO_WARN\n' + before
+        before = '#define __BPT_IMGUI_NO_WARN\n' + before
     if path.stem.endswith('sdlrenderer'):
         # SPECIAL CASE: The check for SDLRenderer requires insepcting an SDL macro
         disclaimer_begin += textwrap.dedent('''
