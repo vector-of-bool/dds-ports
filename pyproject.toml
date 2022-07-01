@@ -14,10 +14,10 @@ dagon = "^0.9.2"
 
 [tool.poetry.dev-dependencies]
 pylint = "^2.7.2"
-mypy = "^0.931"
 rope = "^0.18.0"
 yapf = "^0.31.0"
 toml = "^0.10.2"
+pyright = "^1.1.256"
 
 [tool.poetry.scripts]
 dds-ports-mkrepo = "dds_ports.main:start"

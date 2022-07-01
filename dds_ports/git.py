@@ -46,7 +46,10 @@ class SimpleGitPort:
         await dagon.fs.remove(sub_clone, recurse=True, absent_ok=True)
         dagon.ui.status(f'Generating sdist for {self.package_id}')
         await dagon.proc.run(['git', 'clone', f'--branch={self._tag}', '--depth=1', full_clone.as_uri(), sub_clone])
-        return sub_clone
+        return await self.prepare(sub_clone)
+
+    async def prepare(self, clone: Path) -> Path:
+        return clone
 
     def make_prep_task(self) -> task.Task[Path]:
         cloner = get_git_cloner_task(self._clone_key, self._url)
