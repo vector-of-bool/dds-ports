@@ -1,9 +1,12 @@
 from asyncio import Semaphore
 import os
-from typing import Any, AsyncContextManager, Iterable, Optional
+from typing import Any, AsyncContextManager, Callable, Iterable, Optional, TypeVar
 
 from aiohttp import client
 from semver import VersionInfo
+
+from dds_ports.git import SimpleGitPort
+from dds_ports.legacy import LegacyDDSGitPort
 
 from .port import Port, PackageID
 from .util import tag_as_version
@@ -50,13 +53,19 @@ async def repo_tags_as_versions(owner: str, repo: str) -> Iterable[VersionInfo]:
     return _each_tag_as_version(owner, repo, tags)
 
 
-def _tags_as_legacy_ports(tags: Iterable[str],
-                          owner: str,
-                          repo: str,
-                          pkg_name: Optional[str],
-                          min_version: VersionInfo,
-                          revision: int = 1) -> Iterable[Port]:
-    from .legacy import LegacyDDSGitPort  # pylint: disable=cyclic-import
+PortTypeT = TypeVar('PortTypeT', bound=SimpleGitPort)
+_PortFactory = Callable[[str, PackageID, str, str], PortTypeT]
+
+
+def _tags_as_ports(tags: Iterable[str],
+                   owner: str,
+                   repo: str,
+                   pkg_name: Optional[str],
+                   min_version: VersionInfo,
+                   max_version: VersionInfo | None,
+                   revision: int = 1,
+                   *,
+                   porttype: _PortFactory[PortTypeT]) -> Iterable[PortTypeT]:
     for t in tags:
         ver = tag_as_version(t)
         if ver is None:
@@ -64,8 +73,10 @@ def _tags_as_legacy_ports(tags: Iterable[str],
             continue
         if ver is None or ver < min_version:
             continue
+        if max_version is not None and ver >= max_version:
+            continue
         pid = PackageID(name=pkg_name or repo, version=ver, revision=revision)
-        yield LegacyDDSGitPort(pid, gh_repo_url(owner, repo), t)
+        yield porttype(pid.name, pid, gh_repo_url(owner, repo), t)
 
 
 def gh_repo_url(owner: str, repo: str) -> str:
@@ -77,7 +88,19 @@ async def native_dds_ports_for_github_repo(*,
                                            repo: str,
                                            pkg_name: Optional[str] = None,
                                            min_version: VersionInfo = VersionInfo(0),
+                                           max_version: VersionInfo | None = None,
                                            revision: int = 1) -> Iterable[Port]:
     tags = await get_repo_tags(owner, repo)
     print(f'Generating ports for {owner}/{repo}')
-    return _tags_as_legacy_ports(tags, owner, repo, pkg_name, min_version, revision)
+    return _tags_as_ports(tags, owner, repo, pkg_name, min_version, max_version, revision, porttype=LegacyDDSGitPort)
+
+
+async def native_bpt_ports_for_github_repo(*,
+                                           owner: str,
+                                           repo: str,
+                                           pkg_name: str | None = None,
+                                           min_version: VersionInfo = VersionInfo(0),
+                                           max_version: VersionInfo | None = None,
+                                           revision: int = 1) -> Iterable[Port]:
+    tags = await get_repo_tags(owner, repo)
+    return _tags_as_ports(tags, owner, repo, pkg_name, min_version, max_version, revision, porttype=SimpleGitPort)

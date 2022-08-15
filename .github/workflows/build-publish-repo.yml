@@ -1,5 +1,10 @@
 name: Build and Publish
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "42 */6 * * *"
 
 jobs:
   build:

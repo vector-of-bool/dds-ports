@@ -9,14 +9,10 @@ from dagon import task
 
 from . import crs
 from .auto import read_package_json, read_library_jsons
-from .port import PackageID
 from .git import SimpleGitPort
 
 
 class LegacyDDSGitPort(SimpleGitPort):
-    def __init__(self, pkg_id: PackageID, url: str, tag: str) -> None:
-        super().__init__(pkg_id.name, pkg_id, url, tag)
-
     def _fixup_crs(self, dirpath: Path) -> None:
         package_json = read_package_json(dirpath)
         deps = self._fixup_dependencies(package_json.get('depends', []))
