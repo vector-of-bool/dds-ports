@@ -1,9 +1,10 @@
-from pathlib import Path
 import itertools
+from pathlib import Path
 from typing import Iterable
+
 from semver import VersionInfo
 
-from dds_ports import port, auto, util, fs
+from dds_ports import auto, fs, github, port, util
 
 
 async def _remove_src(root: Path) -> None:
@@ -185,5 +186,10 @@ async def all_ports() -> Iterable[port.Port]:
             owner='jbeder',
             repo='yaml-cpp',
             min_version=VersionInfo(0, 6, 0),
+        ),
+        github.native_bpt_ports_for_github_repo(
+            owner='vector-of-bool',
+            repo='debate',
+            pkg_name='vob.debate',
         ),
     )))
