@@ -1,5 +1,6 @@
 import itertools
 from pathlib import Path
+import textwrap
 from typing import Iterable
 
 from semver import VersionInfo
@@ -38,6 +39,25 @@ async def fixup_fmt_8(root: Path) -> None:
 async def fixup_taskflow(root: Path) -> None:
     await fs.move_files(files=root.glob('taskflow/**/*'), into=root / 'src/', whence=root)
 
+
+async def fixup_immer(root: Path) -> None:
+    await fs.move_files(files=root.glob('immer/**/*.hpp'), into=root / 'src', whence=root)
+    config_hpp = root.joinpath('src/immer/config.hpp')
+    config_lines = config_hpp.read_text().splitlines()
+    ponce_pos = config_lines.index('#pragma once')
+    config_lines.pop(ponce_pos)
+    config_lines.insert(ponce_pos, textwrap.dedent(r'''
+        #pragma once
+
+        // This tweaks-include directive is not part of immer upstream, and was
+        // added for the bpt port.
+        #ifdef __has_include
+            #if __has_include(<immer.tweaks.hpp>)
+                #include <immer.tweaks.hpp>
+            #endif
+        #endif
+    '''))
+    config_hpp.write_text('\n'.join(config_lines))
 
 async def all_ports() -> Iterable[port.Port]:
     return itertools.chain.from_iterable(await util.wait_all((
@@ -186,6 +206,11 @@ async def all_ports() -> Iterable[port.Port]:
             owner='jbeder',
             repo='yaml-cpp',
             min_version=VersionInfo(0, 6, 0),
+        ),
+        auto.enumerate_simple_github(
+            owner='arximboldi',
+            repo='immer',
+            fs_transform=fixup_immer,
         ),
         github.native_bpt_ports_for_github_repo(
             owner='vector-of-bool',
