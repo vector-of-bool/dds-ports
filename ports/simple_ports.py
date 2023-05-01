@@ -46,7 +46,9 @@ async def fixup_immer(root: Path) -> None:
     config_lines = config_hpp.read_text().splitlines()
     ponce_pos = config_lines.index('#pragma once')
     config_lines.pop(ponce_pos)
-    config_lines.insert(ponce_pos, textwrap.dedent(r'''
+    config_lines.insert(
+        ponce_pos,
+        textwrap.dedent(r'''
         #pragma once
 
         // This tweaks-include directive is not part of immer upstream, and was
@@ -56,8 +58,9 @@ async def fixup_immer(root: Path) -> None:
                 #include <immer.tweaks.hpp>
             #endif
         #endif
-    '''))
+        '''))
     config_hpp.write_text('\n'.join(config_lines))
+
 
 async def all_ports() -> Iterable[port.Port]:
     return itertools.chain.from_iterable(await util.wait_all((
