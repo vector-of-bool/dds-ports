@@ -77,8 +77,8 @@ async def all_ports() -> Iterable[port.Port]:
             pkg_version=2,
         ),
         auto.enumerate_simple_github(
-            owner='apolukhin',
-            repo='magic_get',
+            owner='boostorg',
+            repo='pfr',
             package_name='boost.pfr',
             pkg_version=2,
         ),
