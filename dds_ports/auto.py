@@ -100,18 +100,33 @@ def _version_in_range(ver: VersionInfo, min_: VersionInfo, max_: VersionInfo) ->
     return True
 
 
-def _tag_as_version(tag: str, owner: str, repo: str) -> VersionInfo | None:
-    ver = util.tag_as_version(tag)
+def _tag_as_version(tag: str, owner: str, repo: str, parse: TagVersionMapFn) -> VersionInfo | None:
+    ver = parse(tag)
     if ver is None:
-        print(f'Skipping non-version tag "{tag}" in {owner}/{repo}')
+        print(f"Skipping non-version tag '{tag}' in {owner}/{repo}")
     return ver
 
 
-async def get_repo_ports(owner: str, repo: str, *, min_version: VersionInfo, max_version: VersionInfo,
-                         crs_json: crs.CRS_JSON, fs_transform: FSTransformFn, try_build: bool,
-                         pkg_version: int) -> Iterable[Port]:
-    tags = list(await github.get_repo_tags(owner, repo))
-    tagged_versions = list((tag, _tag_as_version(tag, owner, repo)) for tag in tags)
+TagVersionMapFn = Callable[[str], VersionInfo | None]
+
+
+async def get_repo_ports(
+    owner: str,
+    repo: str,
+    *,
+    min_version: VersionInfo,
+    max_version: VersionInfo,
+    crs_json: crs.CRS_JSON,
+    fs_transform: FSTransformFn,
+    try_build: bool,
+    pkg_version: int,
+    tagged_versions: Iterable[tuple[str, VersionInfo]] | None = None,
+    tag_mapper: TagVersionMapFn = util.tag_as_version,
+) -> Iterable[Port]:
+    if tagged_versions is None:
+        tags = list(await github.get_repo_tags(owner, repo))
+        tagged_versions_1 = list((tag, _tag_as_version(tag, owner, repo, tag_mapper)) for tag in tags)
+        tagged_versions = ((tag, ver) for tag, ver in tagged_versions_1 if ver is not None)
     return (  #
         SimpleGitHubAdaptingPort(
             package_id=PackageID(crs_json['name'], version, revision=pkg_version),
@@ -123,7 +138,7 @@ async def get_repo_ports(owner: str, repo: str, *, min_version: VersionInfo, max
             try_build=try_build,
         )  #
         for tag, version in tagged_versions  #
-        if version is not None and _version_in_range(version, min_version, max_version)  #
+        if _version_in_range(version, min_version, max_version)  #
     )
 
 
@@ -141,7 +156,9 @@ async def enumerate_simple_github(
     depends: Optional[Sequence[str]] = None,
     fs_transform: Optional[FSTransformFn] = None,
     pkg_version: int = 1,
-    try_build: bool = True,
+    try_build: bool = False,
+    tagged_versions: Iterable[tuple[str, VersionInfo]] | None = None,
+    tag_mapper: TagVersionMapFn = util.tag_as_version,
 ) -> Iterable[Port]:
     return await get_repo_ports(
         owner,
@@ -169,4 +186,6 @@ async def enumerate_simple_github(
         fs_transform=fs_transform or _null_transform,
         try_build=try_build,
         pkg_version=pkg_version,
+        tagged_versions=tagged_versions,
+        tag_mapper=tag_mapper,
     )

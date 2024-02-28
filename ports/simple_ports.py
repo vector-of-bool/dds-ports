@@ -1,6 +1,7 @@
 import itertools
-from pathlib import Path
+import re
 import textwrap
+from pathlib import Path
 from typing import Iterable
 
 from semver import VersionInfo
@@ -58,8 +59,17 @@ async def fixup_immer(root: Path) -> None:
                 #include <immer.tweaks.hpp>
             #endif
         #endif
-        '''))
+        '''),
+    )
     config_hpp.write_text('\n'.join(config_lines))
+
+
+def _nvstdexec_tagmap(tag: str) -> VersionInfo | None:
+    mat = re.match(r'nvhpc-(\d+)\.(\d+)(?:[-.](rc\d+))?', tag)
+    if not mat:
+        return
+    maj, min, rc = mat.groups()
+    return VersionInfo(int(maj), int(min), 0, rc)
 
 
 async def all_ports() -> Iterable[port.Port]:
@@ -214,6 +224,11 @@ async def all_ports() -> Iterable[port.Port]:
             owner='arximboldi',
             repo='immer',
             fs_transform=fixup_immer,
+        ),
+        auto.enumerate_simple_github(
+            owner='NVIDIA',
+            repo='stdexec',
+            tag_mapper=_nvstdexec_tagmap,
         ),
         github.native_bpt_ports_for_github_repo(
             owner='vector-of-bool',
