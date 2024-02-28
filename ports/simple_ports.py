@@ -68,8 +68,8 @@ def _nvstdexec_tagmap(tag: str) -> VersionInfo | None:
     mat = re.match(r'nvhpc-(\d+)\.(\d+)(?:[-.](rc\d+))?', tag)
     if not mat:
         return
-    maj, min, rc = mat.groups()
-    return VersionInfo(int(maj), int(min), 0, rc)
+    maj, mn, rc = mat.groups()
+    return VersionInfo(int(maj), int(mn), 0, rc)
 
 
 async def all_ports() -> Iterable[port.Port]:
